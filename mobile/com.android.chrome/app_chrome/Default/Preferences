@@ -1,0 +1,103 @@
+{
+   "alternate_error_pages": {
+      "enabled": false
+   },
+   "browser": {
+      "last_known_google_url": "https://www.google.de/",
+      "last_prompted_google_url": "https://www.google.de/"
+   },
+   "countryid_at_install": -1,
+   "default_search_provider": {
+      "alternate_urls": [ "{google:baseURL}#q={searchTerms}", "{google:baseURL}search#q={searchTerms}", "{google:baseURL}webhp#q={searchTerms}" ],
+      "enabled": true,
+      "encodings": "UTF-8",
+      "icon_url": "http://www.google.com/favicon.ico",
+      "id": "2",
+      "instant_url": "{google:baseURL}webhp?sourceid=chrome-instant&{google:RLZ}{google:instantEnabledParameter}{google:instantExtendedEnabledParameter}ie={inputEncoding}",
+      "keyword": "google.de",
+      "name": "Google",
+      "prepopulate_id": "1",
+      "search_url": "{google:baseURL}search?q={searchTerms}&{google:RLZ}{google:acceptedSuggestion}{google:originalQueryForSuggestion}{google:assistedQueryStats}{google:searchFieldtrialParameter}{google:searchClient}{google:sourceId}{google:instantExtendedEnabledParameter}ie={inputEncoding}",
+      "suggest_url": "{google:baseSuggestURL}search?{google:searchFieldtrialParameter}client=chrome&q={searchTerms}&{google:cursorPosition}sugkey={google:suggestAPIKeyParameter}"
+   },
+   "dns_prefetching": {
+      "enabled": false
+   },
+   "download": {
+      "directory_upgrade": true
+   },
+   "extensions": {
+      "last_chrome_version": "25.0.1364.169"
+   },
+   "net": {
+      "http_server_properties": {
+         "version": 1
+      }
+   },
+   "ntp": {
+      "promo_resource_cache_update": "1364481105.473983"
+   },
+   "plugins": {
+      "enabled_internal_pdf3": true,
+      "enabled_nacl": true,
+      "last_internal_directory": "/data/data/com.android.chrome/lib",
+      "removed_old_component_pepper_flash_settings": true
+   },
+   "profile": {
+      "avatar_index": 0,
+      "content_settings": {
+         "clear_on_exit_migrated": true,
+         "pref_version": 1
+      },
+      "created_by_version": "25.0.1364.169",
+      "exit_type": "Crashed",
+      "exited_cleanly": true,
+      "name": "First user"
+   },
+   "promo": {
+      "mobile_ntp_sync_promo": [ {
+         "closed": false,
+         "end": 1371679140.0,
+         "gplus_required": false,
+         "group": 0,
+         "increment": 1,
+         "increment_frequency": 3600,
+         "increment_max": 1,
+         "max_views": 0,
+         "num_groups": 1,
+         "payload": {
+            "payload_format_version": 3,
+            "promo_action_args": [ "Reminder: Get Chrome", "When you're on your computer, visit\n    https://goo.gl/jb93u\n    and click \"Download\".", "Send me instructions via...", "My Computer", "Not yet synced" ],
+            "promo_action_type": "ACTION_EMAIL",
+            "promo_message_long": "SYNCGRAPHIC_IMAGE\n      LINE_BREAK\n      Access the tabs you open on your computer, right here.\n      LINE_BREAK\n      LINE_BREAK\n      Just open Chrome on your computer, go to the menu, and select \"Sign In to Chrome...\"\n      LINE_BREAK\n      LINE_BREAK\n      BEGIN_HIGHLIGHT\n      Try Chrome on your computer.\n      END_HIGHLIGHT",
+            "promo_message_short": "Access the tabs open on your computer, right here.\n      LINE_BREAK\n      LINE_BREAK\n      BEGIN_HIGHLIGHT\n      Try Chrome on your computer.\n      END_HIGHLIGHT",
+            "promo_requires_mobile_only_sync": true,
+            "promo_requires_sync": true,
+            "promo_show_as_virtual_computer": true,
+            "promo_show_on_most_visited": false,
+            "promo_show_on_open_tabs": true,
+            "promo_virtual_computer_lastsync": "Not yet synced",
+            "promo_virtual_computer_title": "My Computer"
+         },
+         "segment": 1,
+         "start": 1348437660.0,
+         "text": "Access the tabs open on your computer, right here.\n      LINE_BREAK\n      LINE_BREAK\n      BEGIN_HIGHLIGHT\n      Try Chrome on your computer.\n      END_HIGHLIGHT",
+         "views": 0
+      } ]
+   },
+   "search": {
+      "suggest_enabled": false
+   },
+   "session": {
+      "restore_on_startup_migrated": true
+   },
+   "sync": {
+      "session_sync_guid": "session_sync4102917343186280350-256457446"
+   },
+   "webkit": {
+      "webprefs": {
+         "font_scale_factor": 1.0499999523162842,
+         "force_enable_zoom": false
+      }
+   }
+}

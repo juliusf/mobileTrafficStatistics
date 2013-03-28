@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+<int name="backoffFailedAttempts" value="0" />
+<string name="latestVersion"></string>
+<string name="marketURL"></string>
+<long name="timestampOfInstall" value="1364481468282" />
+<long name="timestampForNextPostAttempt" value="1364485068299" />
+<long name="timestampOfRequest" value="-1" />
+<boolean name="sendInstallEvent" value="false" />
+<long name="timestampForNewRequest" value="1364499468817" />
+</map>

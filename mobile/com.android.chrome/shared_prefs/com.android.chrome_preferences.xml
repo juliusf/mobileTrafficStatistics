@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+<boolean name="accept_cookies" value="true" />
+<boolean name="navigation_error" value="false" />
+<boolean name="enable_location" value="true" />
+<boolean name="enable_javascript" value="true" />
+<null name="chrome_to_mobile_c2dm_registrationId" />
+<boolean name="network_predictions" value="false" />
+<boolean name="first_run_flow" value="true" />
+<string name="com.google.android.apps.chrome.identity.UNIQUE_ID">4102917343186280350-256457446</string>
+<boolean name="chrome_to_mobile_enabled" value="false" />
+<boolean name="enable_remote_debugging" value="false" />
+<long name="chrome_to_mobile_version" value="3" />
+<set name="Pak filenames">
+<string>chrome.pak</string>
+<string>en-GB.pak</string>
+<string>resources.pak</string>
+<string>en-US.pak</string>
+<string>chrome_100_percent.pak</string>
+</set>
+<string name="crash_dump_upload">crash_dump_only_with_wifi</string>
+<boolean name="block_popups" value="true" />
+<boolean name="force_enable_zoom" value="false" />
+<boolean name="do_not_track" value="false" />
+<null name="chrome_to_mobile_printerId" />
+<boolean name="search_suggestions" value="false" />
+<string name="ntp_section_false">most_visited</string>
+<boolean name="chrome_to_mobile_needs_updating" value="true" />
+<boolean name="autofill" value="true" />
+<int name="search_engine" value="0" />
+<string name="Last language">en</string>
+<null name="chrome_to_mobile_authToken" />
+<boolean name="save_passwords" value="true" />
+</map>
