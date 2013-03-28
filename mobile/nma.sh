@@ -12,7 +12,7 @@
 #########################################################################################
 
 #####start user configurable settings####
-APIkey="0" ## API Key must me set here, go to http://www.notifymyandroid.com/ to get one
+APIkey="f5605506a860f367fd588b0928f856d0dffaab30680d593b" ## API Key must me set here, go to http://www.notifymyandroid.com/ to get one
 limit=5 # how many times to attempt to run curl, can help on unstable networks.
 pinghost="google.com" ##host to ping before running anything to verify that the internet is up.
 #####end user configurable settings######

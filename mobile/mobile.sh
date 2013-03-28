@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+interceptionHostIp=10.23.23.160
+interceptionHostRoot="~/mobileTraffic/interception/"
+filename='`date +"%y-%m-%d--%H"`$1'
 function run_test {
 
     cat top500.txt | \
@@ -7,31 +11,35 @@ function run_test {
         sleep 5s
         adb shell am start -a android.intent.action.VIEW -d $URL
         sleep 60s
-        adb shell killall com.android.chrome:sandboxed_process0
+        adb shell killall com.android.chrome:sandboxed_process0 #kills the process of the currently active tab
   done;
+
 }
 
 function notify_client {
   
-  sh MobileTraffic "The experiment is ready" "1"
+  sh nma.sh MobileTraffic "The experiment is ready" "1"
+
 }
 
-function reinstall_chrome {
-
-  adb uninstall com.android.chrome
-  adb install com.android.chrome-1.apk
-}
 
 function clear_chrome_data {
+
 adb shell killall com.android.chrome
 adb shell rm -rf /data/data/com.android.chrome
 adb push com.android.chrome /data/data/com.android.chrome
 
-
 } 
+
+function start_capture {
+
+ssh -i ~/.ssh/id_rsa_experiment 10.23.23.160 nohup sh $interceptionHostRoot/startup.sh $filename &
+
+}
 ##running the functions
+  start_capture
   #reinstall_chrome
-  clear_chrome_data
-  run_test
+  #clear_chrome_data
+  #run_test
   #notify_client
   #reinstall_chrome
