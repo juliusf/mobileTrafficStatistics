@@ -1,7 +1,6 @@
 #!/bin/bash
 
-savePath='captures/$1'
-
+savePath="captures/"$1".pcap"
 sudo echo 1 > /proc/sys/net/ipv4/ip_forward 1
 sudo ifconfig eth1 10.0.0.254 netmask 255.255.255.0
 sudo iptables -A FORWARD -i eth1 -j ACCEPT
