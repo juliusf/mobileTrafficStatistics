@@ -3,7 +3,8 @@
 
 interceptionHostIp=10.23.23.160
 interceptionHostRoot="~/mobileTraffic/interception/"
-filename='`date +"%y-%m-%d--%H"`$1'
+filename=`date +"%y-%m-%d--%H"`"_"$1
+
 function run_test {
 
     cat top500.txt | \
@@ -33,11 +34,12 @@ adb push com.android.chrome /data/data/com.android.chrome
 
 function start_capture {
 
-ssh -i ~/.ssh/id_rsa_experiment 10.23.23.160 nohup sh $interceptionHostRoot/startup.sh $filename &
+ssh -i ~/.ssh/id_rsa_experiment 10.23.23.160 sudo nohup sh $interceptionHostRoot/startup.sh $filename &
 
 }
 ##running the functions
   start_capture
+ echo foobar
   #reinstall_chrome
   #clear_chrome_data
   #run_test
