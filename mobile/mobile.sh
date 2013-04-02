@@ -20,7 +20,7 @@ function run_test {
 
 function notify_client {
   
-  sh nma.sh MobileTraffic "The experiment is ready" "1"
+  sh nma.sh MobileTraffic "The experiment $1 is ready" "1"
 
 }
 
@@ -34,15 +34,33 @@ adb push com.android.chrome /data/data/com.android.chrome
 } 
 
 function start_capture {
-
-ssh -i ~/.ssh/id_rsa_experiment 10.23.23.160 sudo nohup sh $interceptionHostRoot/startup.sh $filename &
+filename=$1
+ssh -i ~/.ssh/id_rsa_experiment $interceptionHostIp sudo nohup sh $interceptionHostRoot/startup.sh $filename &
 
 }
-##running the functions
-  start_capture
- echo foobar
-  #reinstall_chrome
-  #clear_chrome_data
-  #run_test
-  #notify_client
-  #reinstall_chrome
+
+function stop_capture {
+
+ssh -i ~/.ssh/id_rsa_experiment $interceptionHostIp sudo killall tcpdump
+
+}
+
+
+
+function basic_measurement_cycle {
+
+filename=`date +"%y-%m-%d--%H"`"_basic_measurement"
+clear_chrome_data
+start_capture  $filename
+run_test
+stop_capture
+notify_client $filename
+
+ }
+
+for i in {1..3}
+do
+   basic_measurement_cycle
+done
+
+
