@@ -10,6 +10,7 @@ function run_test {
     cat top500.txt | \
     while read URL; do
         sleep 5s
+        echo -n "$URL" | nc -4u -w1 $interceptionHostIp 1337
         adb shell am start -a android.intent.action.VIEW -d $URL
         sleep 60s
         adb shell killall com.android.chrome:sandboxed_process0 #kills the process of the currently active tab
