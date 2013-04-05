@@ -11,16 +11,16 @@ function run_test {
     while read URL; do
         sleep 5s
         echo -n "$URL" | nc -4u -w1 $interceptionHostIp 1337
-        adb shell am start -a android.intent.action.VIEW -d $URL
+        adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
         sleep 60s
-        adb shell killall com.android.chrome:sandboxed_process0 #kills the process of the currently active tab
+        adb shell killall com.android.chrome:sandboxed_process0 || errorHandler #kills the process of the currently active tab
   done;
 
 }
 
 function notify_client {
   
-  sh nma.sh MobileTraffic "The experiment $1 is ready" "1"
+  sh nma.sh MobileTraffic "The experiment $1 is ready" 0
 
 }
 
@@ -45,7 +45,12 @@ ssh -i ~/.ssh/id_rsa_experiment $interceptionHostIp sudo killall tcpdump
 
 }
 
+function errorHandler {
 
+  sh nma.sh MobileTraffic "The experiment $1 FAILED! Dumping syslog..." 2
+  adb pull /devlog/system_log
+  exit -1
+}
 
 function basic_measurement_cycle {
 
@@ -58,9 +63,18 @@ notify_client $filename
 
  }
 
+
+ if [$1 == "--selftest" ]; then
+ echo selftest
+ fi
+if [ $1 == "--basicTest" ]; then
 for i in {1..3}
 do
    basic_measurement_cycle
 done
+else
+echo "Usage: --basicTest for basic test"
+echo "--selfTest for selftest"
+fi
 
 
