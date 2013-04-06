@@ -52,6 +52,13 @@ function errorHandler {
   exit -1
 }
 
+function getRemoteFileSize {
+
+filename=$1
+FILESIZE=$(ssh -i ~/.ssh/id_rsa_experiment $interceptionHostIp stat -c%s "~/captures/$1.pcap")
+return $FILESIZE
+}
+
 function basic_measurement_cycle {
 
 filename=`date +"%y-%m-%d--%H"`"_basic_measurement"
@@ -61,11 +68,12 @@ run_test
 stop_capture
 notify_client $filename
 
- }
+}
 
 
  if [$1 == "--selftest" ]; then
- echo selftest
+ filesize=getRemoteFileSize 13-04-03--05_basic_measurement
+ echo filesize
  fi
 if [ $1 == "--basicTest" ]; then
 for i in {1..3}
