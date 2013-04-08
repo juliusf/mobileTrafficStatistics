@@ -20,8 +20,9 @@ function run_test {
 }
 
 function notify_client {
-  
-  sh nma.sh MobileTraffic "The experiment $1 is ready" 0
+  filename=$1
+  filesize=$(getRemoteFileSize $filename)
+  sh nma.sh MobileTraffic "The experiment $1 is ready. Size: $filesize" 0
 
 }
 
@@ -57,7 +58,7 @@ function getRemoteFileSize {
 
 filename=$1
 FILESIZE=$(ssh -i ~/.ssh/id_rsa_experiment $interceptionHostIp stat -c%s "~/captures/$1.pcap")
-return $FILESIZE
+echo $FILESIZE
 }
 
 function basic_measurement_cycle {
@@ -72,9 +73,11 @@ notify_client $filename
 }
 
 
- if [$1 == "--selftest" ]; then
- filesize=getRemoteFileSize 13-04-03--05_basic_measurement
- echo filesize
+ if [ $1 == "--selftest" ]; then
+ filename=13-04-03--05_basic_measurement
+
+getRemoteFileSize "$filename"
+ echo $filesize
  fi
 if [ $1 == "--basicTest" ]; then
 for i in {1..3}
