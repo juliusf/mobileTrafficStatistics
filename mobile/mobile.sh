@@ -9,11 +9,12 @@ function run_test {
 
     cat top500.txt | \
     while read URL; do
-        sleep 5s
+        
         echo -n "$URL" | nc -4u -w1 $interceptionHostIp 1337
         adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
         sleep 60s
         adb shell killall com.android.chrome:sandboxed_process0 || errorHandler #kills the process of the currently active tab
+        clear_chrome_data || errorHandler
   done;
 
 }
@@ -28,8 +29,8 @@ function notify_client {
 function clear_chrome_data {
 
 adb shell killall com.android.chrome
-adb shell rm -rf /data/data/com.android.chrome
-adb push com.android.chrome /data/data/com.android.chrome
+adb shell rm -rf /data/data/com.android.chrome/cache
+adb push com.android.chrome /data/data/com.android.chrome/cache
 
 } 
 
