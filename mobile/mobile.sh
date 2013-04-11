@@ -31,7 +31,7 @@ function clear_chrome_data {
 
 adb shell killall com.android.chrome
 adb shell rm -rf /data/data/com.android.chrome/cache
-adb push com.android.chrome /data/data/com.android.chrome/cache
+adb push com.android.chrome/cache/ /data/data/com.android.chrome/cache
 
 } 
 
