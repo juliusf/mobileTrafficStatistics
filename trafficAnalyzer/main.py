@@ -11,6 +11,9 @@ pkts = utils.rdpcap("13-04-11--18_basic_measurement.pcap")
 requestDomain = ""
 
 
+def extractHttp():
+
+    
 
 for pkt in pkts:
     #packet data extraction

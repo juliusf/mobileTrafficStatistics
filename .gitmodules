@@ -1,0 +1,3 @@
+[submodule "trafficAnalyzer/scapy-http"]
+	path = trafficAnalyzer/scapy-http
+	url = https://github.com/invernizzi/scapy-http.git
