@@ -1,7 +1,7 @@
 #!/bin/python2.7    
 
 from scapy.all import *
-from .scapy-http import HTTP
+from scapyhattp import HTTP
 
 def updateRequestDomain():
     #Update Database here
@@ -12,7 +12,7 @@ pkts = utils.rdpcap("13-04-11--18_basic_measurement.pcap")
 requestDomain = ""
 
 
-def extractHttp():
+
 
 
 
