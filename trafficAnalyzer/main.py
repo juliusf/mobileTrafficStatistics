@@ -1,6 +1,7 @@
 #!/bin/python2.7    
 
 from scapy.all import *
+from .scapy-http import HTTP
 
 def updateRequestDomain():
     #Update Database here
@@ -13,7 +14,7 @@ requestDomain = ""
 
 def extractHttp():
 
-    
+
 
 for pkt in pkts:
     #packet data extraction
