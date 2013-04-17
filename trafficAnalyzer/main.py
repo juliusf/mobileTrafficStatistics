@@ -10,7 +10,11 @@ def updateRequestDomain(domain):
     requestBatch.setRequestURL(domain)
 
 def extractHTTP():
-  pkt.getlayer(HTTP).show()
+   httpData = pkt.getlayer(HTTP).payload.fields
+
+   if 'Method' in httpData:
+    requestBatch.incrementNumberOfGetRequests()
+
 
 pkts = utils.rdpcap("13-04-11--18_basic_measurement.pcap")
 

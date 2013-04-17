@@ -8,27 +8,30 @@ class RequestBatch(object):
 	def __init__(self):
 		pass
 
-	def increasNumberOfGetRequests():
-		if _requestURL != "":
-			_getCount += 1
+	def incrementNumberOfGetRequests(self):
+		print self._requestURL
+		if self._requestURL != "":
+			self._getCount += 1
 		else:
 			print "WARNING: undefined packet captured!"
 
-	def increaseNumberOfDNSRequests():
-		if _requestURL != "":
+	def incrementNumberOfDNSRequests(self):
+		global _dnsCount
+		if _ != "":
 			_dnsCount += 1
 		else:
 			print "WARNING: undefined packet captured!"
 
 
 	def increaseDownstreamVolume(self, bytes):
+		global _downstreamVolumeBytes
 		if _requestURL != "":
 			_downstreamVolumeBytes += bytes
 		else:
-			print "WARNING: undefined packet captured!"
+			print "WARNING: unable to assign packet to RequestBatch"
 		
 
 	def setRequestURL(self, requestURL):
-		_requestURL = requestURL
-		print "url updated to: %s" % (_requestURL)
+		self._requestURL = requestURL
+		print "url updated to: %s" % (self._requestURL)
 
