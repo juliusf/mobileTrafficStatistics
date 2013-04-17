@@ -1,19 +1,21 @@
 #!/bin/python2.7    
 
 from scapy.all import *
-from scapyhattp import HTTP
+from scapyhttp.HTTP import HTTP
+from RequestBatch import RequestBatch
 
-def updateRequestDomain():
+def updateRequestDomain(domain):
     #Update Database here
-    print  'updateRequest'
+    requestBatch = RequestBatch()
+    requestBatch.setRequestURL(domain)
+
+def extractHTTP():
+  pkt.getlayer(HTTP).show()
 
 pkts = utils.rdpcap("13-04-11--18_basic_measurement.pcap")
 
-requestDomain = ""
 
-
-
-
+requestBatch = RequestBatch()
 
 
 for pkt in pkts:
@@ -41,9 +43,9 @@ for pkt in pkts:
     #check for new url request block:
 
     if l4 == "UDP" and dport == 1337:
-        updateRequestDomain()
-        requestURL =  pkt.getlayer(UDP).payload
+        updateRequestDomain(pkt.getlayer(Raw))
+        
     else:
-        if pkt.haslayer(Raw):
-            print pkt.getlayer(Raw)
+        if pkt.haslayer(HTTP):
+           extractHTTP()
 
