@@ -1,19 +1,23 @@
 class RequestBatch(object):
 	"""docstring for RequestBock"""
 	
-	_getCount = 0
-	_dnsCount = 0
-	_downstreamVolumeBytes = 0
-	_requestURL = ""
+	#_getCount = 0
+	#_dnsCount = 0
+	#_downstreamVolumeBytes = 0
+	#_requestURL = ""
 	def __init__(self):
-		pass
+		self._getCount = 0
+		self._dnsCount = 0
+		self._downstreamVolumeBytes = 0
+		self._requestURL = ""
 
 	def incrementNumberOfGetRequests(self):
 		print self._requestURL
 		if self._requestURL != "":
 			self._getCount += 1
 		else:
-			print "WARNING: undefined packet captured!"
+			print "WARNING: undefined packet captured!: %s" % (self)
+			
 
 	def incrementNumberOfDNSRequests(self):
 		global _dnsCount
