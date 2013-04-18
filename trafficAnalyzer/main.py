@@ -5,7 +5,7 @@ from scapyhttp.HTTP import HTTP
 from RequestBatch import RequestBatch
 import optparse
 import matplotlib.pyplot as plt
-
+import numpy as np
 #global vars
 current_packet = None
 request_batch = RequestBatch()
@@ -125,17 +125,20 @@ def plot_preview():
     plt.figure(1)
     plt.subplot(311)
     plt.plot(xaxis, http_gets, 'ro')
+    plt.axhline(y=np.mean(http_gets))
     plt.ylabel('Nr. of HTTP GET requests')
     plt.xlabel('Batch Nr.')
 
     plt.subplot(312)
     plt.plot(xaxis, dns_reqs, 'ro')
-    plt.ylabel('Nr. of HTTP GET requests')
+    plt.axhline(y=np.mean(dns_reqs))
+    plt.ylabel('Nr. of DNS requests')
     plt.xlabel('Batch Nr.')
     
     plt.subplot(313)
     plt.plot(xaxis, downstream_vols, 'ro')
-    plt.ylabel('Nr. of HTTP GET requests')
+    plt.axhline(y=np.mean(downstream_vols))
+    plt.ylabel('Downstream volume in Bytes')
     plt.xlabel('Batch Nr.')
     
     plt.show()
