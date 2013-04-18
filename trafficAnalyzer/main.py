@@ -1,25 +1,47 @@
-#!/bin/python2.7    
+#!/usr/bin/python2.7    
 
 from scapy.all import *
 from scapyhttp.HTTP import HTTP
 from RequestBatch import RequestBatch
 import optparse
+import matplotlib.pyplot as plt
 
-
+#global vars
 current_packet = None
 request_batch = RequestBatch()
+processed_batches = []
+options = None
+
 
 def main():
+    parser = optparse.OptionParser()
+    #commandline options 
+    parser.add_option('-f', '--file', help='the pcap file to be parsed')
+    parser.add_option("-p", "--preview",
+                  action="store_true", dest="preview", default=False,
+                  help="Generate a preview plot of the processed")
+    parser.add_option('-g', '--gnuplot', help='creates a gnuplot DAT file')
+
+    (opts, args) = parser.parse_args()
+
+    if opts.file is None:
+        print "You haven't specified any pcap file.\n"
+        parser.print_help()
+        exit(-1)
+
+    #parse the actual file   
+    parse_pcap(opts.file)
+
+    #create preview
+    if opts.preview:
+        plot_preview()
+
+def parse_pcap(filename):
     #global vars
     global current_packet
     global request_batch
-
-    #commandline option parser
-    parser = optparse.OptionParser()
-    parser.add_option('-p', '--plot', help='creates gnuplot DAT file')
-    (opts, args) = parser.parse_args()
     
-    packets = utils.rdpcap("13-04-11--18_basic_measurement.pcap")
+    packets = utils.rdpcap(filename)
     request_batch = RequestBatch()
 
     for pkt in packets:
@@ -67,6 +89,9 @@ def main():
 def update_requestdomain(domain):
     #Update Database here
     global request_batch
+    global processed_batches
+
+    processed_batches.append(request_batch)
     print '-'*23
     print "Statistics for: %s" % (request_batch.get_requesturl())
     print "HTTP GET Requests: %s" % (request_batch.get_getrequests())
@@ -83,6 +108,37 @@ def extract_http():
     if 'Method' in httpData:
         request_batch.increment_getrequests()
 
+def plot_preview():
+    global processed_batches
+    
+    http_gets = []
+    dns_reqs = []
+    downstream_vols = []
+    xaxis = []
+
+    for batch in processed_batches:
+        http_gets.append(batch.get_getrequests())
+        dns_reqs.append(batch.get_dnsrequests())
+        downstream_vols.append(batch.get_downstreamvolume())
+        xaxis.append(len(http_gets))
+
+    plt.figure(1)
+    plt.subplot(311)
+    plt.plot(xaxis, http_gets, 'ro')
+    plt.ylabel('Nr. of HTTP GET requests')
+    plt.xlabel('Batch Nr.')
+
+    plt.subplot(312)
+    plt.plot(xaxis, dns_reqs, 'ro')
+    plt.ylabel('Nr. of HTTP GET requests')
+    plt.xlabel('Batch Nr.')
+    
+    plt.subplot(313)
+    plt.plot(xaxis, downstream_vols, 'ro')
+    plt.ylabel('Nr. of HTTP GET requests')
+    plt.xlabel('Batch Nr.')
+    
+    plt.show()
 
 if __name__=="__main__":
    main()
