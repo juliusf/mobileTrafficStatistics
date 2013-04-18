@@ -61,6 +61,13 @@ FILESIZE=$(ssh -i ~/.ssh/id_rsa_experiment $interceptionHostIp stat -c%s "~/capt
 echo $FILESIZE
 }
 
+function copyResult {
+
+filename=$1
+scp -i ~/.ssh/id_rsa_experiment $interceptionHostIp:~/captures/$filename.pcap captures/$filename.pcap
+
+}
+
 function basic_measurement_cycle {
 
 filename=`date +"%y-%m-%d--%H"`"_basic_measurement"
@@ -69,7 +76,7 @@ start_capture  $filename
 run_test
 stop_capture
 notify_client $filename
-
+copyResult $filename
 }
 
 
@@ -80,7 +87,7 @@ getRemoteFileSize "$filename"
  echo $filesize
  fi
 if [ $1 == "--basicTest" ]; then
-for i in {1..3}
+for i in {1..1}
 do
    basic_measurement_cycle
 done
