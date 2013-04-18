@@ -11,9 +11,13 @@ current_packet = None
 request_batch = RequestBatch()
 processed_batches = []
 options = None
-
+dns_blacklist = []
 
 def main():
+    global dns_blacklist
+
+    #parse and populate the blacklist
+    #blacklist_file = open('blacklist.txt')
     parser = optparse.OptionParser()
     #commandline options 
     parser.add_option('-f', '--file', help='the pcap file to be parsed')
@@ -28,6 +32,7 @@ def main():
         print "You haven't specified any pcap file.\n"
         parser.print_help()
         exit(-1)
+
 
     #parse the actual file   
     parse_pcap(opts.file)
@@ -91,12 +96,13 @@ def update_requestdomain(domain):
     global request_batch
     global processed_batches
 
-    processed_batches.append(request_batch)
-    print '-'*23
-    print "Statistics for: %s" % (request_batch.get_requesturl())
-    print "HTTP GET Requests: %s" % (request_batch.get_getrequests())
-    print "DNS Requests: %s" % (request_batch.get_dnsrequests())
-    print "Downstream Volume: %s" % (request_batch.get_downstreamvolume())
+    if request_batch._requestURL != "": # check wheter the requestbatch has been touched before
+        processed_batches.append(request_batch)
+        print '-'*23
+        print "Statistics for: %s" % (request_batch.get_requesturl())
+        print "HTTP GET Requests: %s" % (request_batch.get_getrequests())
+        print "DNS Requests: %s" % (request_batch.get_dnsrequests())
+        print "Downstream Volume: %s" % (request_batch.get_downstreamvolume())
     request_batch = RequestBatch()
     request_batch.set_requesturl(domain)
 
