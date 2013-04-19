@@ -8,18 +8,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 #constants
 DUT_IP = "10.0.0.23"
-#global vars
-current_packet = None
+lcurrent_packet = None
 request_batch = RequestBatch()
 processed_batches = []
 options = None
 dns_blacklist = []
+ip_blacklist = []
 
 def main():
     global dns_blacklist
+    global ip_blacklist
 
     #parse and populate the blacklist
-    #blacklist_file = open('blacklist.txt')
+    print "generating blacklists..."
+    f = open('dnsBlacklist.txt')
+    dns_blacklist = f.readlines()
+    f.close()
+    f = open('ipBlacklist.txt')
+    ip_blacklist = f.readlines()
+    f.close()
+
     parser = optparse.OptionParser()
     #commandline options 
     parser.add_option('-f', '--file', help='the pcap file to be parsed')
@@ -40,6 +48,7 @@ def main():
     parse_pcap(opts.file)
 
     #create preview
+    print "creating preview..."
     if opts.preview:
         plot_preview()
 
@@ -47,10 +56,10 @@ def parse_pcap(filename):
     #global vars
     global current_packet
     global request_batch
-    
+    print "reading pcap..."
     packets = utils.rdpcap(filename)
     request_batch = RequestBatch()
-
+    print "parsing pcap..."
     for pkt in packets:
         #packet data extraction
         current_packet = pkt
@@ -89,8 +98,9 @@ def parse_pcap(filename):
 
             #DownstreamVolume
 
-            if dst == DUT_IP :
-                request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) 
+            if dst == DUT_IP  and not ip_blacklisted(src):
+                if not (( "173.194.69." in src or  "173.194.70." in src) and sport == 443):  #filters out the google subnets for SSL
+                    request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) 
 
 
 def update_requestdomain(domain):
@@ -100,11 +110,11 @@ def update_requestdomain(domain):
 
     if request_batch._requestURL != "": # check wheter the requestbatch has been touched before
         processed_batches.append(request_batch)
-        print '-'*23
-        print "Statistics for: %s" % (request_batch.get_requesturl())
-        print "HTTP GET Requests: %s" % (request_batch.get_getrequests())
-        print "DNS Requests: %s" % (request_batch.get_dnsrequests())
-        print "Downstream Volume: %s" % (request_batch.get_downstreamvolume())
+     # print '-'*23
+      # print "Statistics for: %s" % (request_batch.get_requesturl())
+       #print "HTTP GET Requests: %s" % (request_batch.get_getrequests())
+      # print "DNS Requests: %s" % (request_batch.get_dnsrequests())
+      # print "Downstream Volume: %s" % (request_batch.get_downstreamvolume())
     request_batch = RequestBatch()
     request_batch.set_requesturl(domain)
 
@@ -132,24 +142,36 @@ def plot_preview():
 
     plt.figure(1)
     plt.subplot(311)
-    plt.plot(xaxis, http_gets, 'ro')
+    plt.plot(xaxis, http_gets, 'rx')
     plt.axhline(y=np.mean(http_gets))
     plt.ylabel('Nr. of HTTP GET requests')
     plt.xlabel('Batch Nr.')
 
     plt.subplot(312)
-    plt.plot(xaxis, dns_reqs, 'ro')
+    plt.plot(xaxis, dns_reqs, 'gx')
     plt.axhline(y=np.mean(dns_reqs))
     plt.ylabel('Nr. of DNS requests')
     plt.xlabel('Batch Nr.')
     
     plt.subplot(313)
-    plt.plot(xaxis, downstream_vols, 'ro')
+    plt.plot(xaxis, downstream_vols, 'bx')
     plt.axhline(y=np.mean(downstream_vols))
     plt.ylabel('Downstream volume in Bytes')
     plt.xlabel('Batch Nr.')
     
     plt.show()
+
+def ip_blacklisted(ip):
+    if ip in ip_blacklist:
+        return True
+    else:
+       return False
+
+def dns_blacklisted(domain_name):
+    if domain_name in dns_blacklist:
+        return True
+    else:
+        return False
 
 if __name__=="__main__":
    main()
