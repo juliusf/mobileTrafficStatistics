@@ -12,7 +12,7 @@ function run_test {
         
         echo -n "$URL" | nc -4u -w1 $interceptionHostIp 1337
         adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
-        sleep 60s
+        sleep 15s
         adb shell killall com.android.chrome:sandboxed_process0 || errorHandler #kills the process of the currently active tab
         clear_chrome_data || errorHandler
   done;
@@ -73,6 +73,7 @@ function basic_measurement_cycle {
 filename=`date +"%y-%m-%d--%H"`"_basic_measurement"
 clear_chrome_data
 start_capture  $filename
+sleep 10s
 run_test
 stop_capture
 notify_client $filename
