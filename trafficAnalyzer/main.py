@@ -6,6 +6,8 @@ from RequestBatch import RequestBatch
 import optparse
 import matplotlib.pyplot as plt
 import numpy as np
+#constants
+DUT_IP = "10.0.0.23"
 #global vars
 current_packet = None
 request_batch = RequestBatch()
@@ -79,16 +81,16 @@ def parse_pcap(filename):
             
         else:
             #HTTP GET extraction
-            if pkt.haslayer(HTTP):
+            if src == DUT_IP and pkt.haslayer(HTTP):
                extract_http()
             #DNS Query Count
-            if l4 == "UDP" and dport == 53:
+            if src == DUT_IP and l4 == "UDP" and dport == 53:
                 request_batch.increment_dnsrequests()
 
             #DownstreamVolume
 
-            if dst == "10.0.0.23" :
-                request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) #TODO: w/ or /w ethernet?
+            if dst == DUT_IP :
+                request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) 
 
 
 def update_requestdomain(domain):
