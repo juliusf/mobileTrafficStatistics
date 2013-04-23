@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7    
+#!/usr/bin/python2.7
 
 from scapy.all import *
 from scapyhttp.HTTP import HTTP
@@ -6,6 +6,9 @@ from RequestBatch import RequestBatch
 import optparse
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats as stats
+import Pmf
+
 #constants
 DUT_IP = "10.0.0.23"
 lcurrent_packet = None
@@ -29,7 +32,7 @@ def main():
     f.close()
 
     parser = optparse.OptionParser()
-    #commandline options 
+    #commandline options
     parser.add_option('-f', '--file', help='the pcap file to be parsed')
     parser.add_option("-p", "--preview",
                   action="store_true", dest="preview", default=False,
@@ -44,7 +47,7 @@ def main():
         exit(-1)
 
 
-    #parse the actual file   
+    #parse the actual file
     parse_pcap(opts.file)
 
     #create preview
@@ -87,7 +90,7 @@ def parse_pcap(filename):
 
         if l4 == "UDP" and dport == 1337:
             update_requestdomain(pkt.getlayer(Raw))
-            
+
         else:
             #HTTP GET extraction
             if src == DUT_IP and pkt.haslayer(HTTP):
@@ -100,7 +103,7 @@ def parse_pcap(filename):
 
             if dst == DUT_IP  and not ip_blacklisted(src):
                 if not (( "173.194.69." in src or  "173.194.70." in src) and sport == 443):  #filters out the google subnets for SSL
-                    request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) 
+                    request_batch.increase_downstreamvolume(len(pkt.getlayer(IP)))
 
 
 def update_requestdomain(domain):
@@ -128,7 +131,7 @@ def extract_http():
 
 def plot_preview():
     global processed_batches
-    
+
     http_gets = []
     dns_reqs = []
     downstream_vols = []
@@ -139,27 +142,70 @@ def plot_preview():
         dns_reqs.append(batch.get_dnsrequests())
         downstream_vols.append(batch.get_downstreamvolume())
         xaxis.append(len(http_gets))
+    print '-' * 23
+    print 'Statistics for http_gets:'
+    print 'mean: %f' % (np.mean(http_gets))
+    print 'variance: %f' % (np.var(http_gets))
+    print 'standard deviation: %f' % (np.sqrt(np.var(http_gets)))
+
+    hist_gets = Pmf.MakeHistFromList(http_gets)
+    http_vals, http_freqs = hist_gets.Render()
+
+    print '-' * 23
+    print 'Statistics for dns requests:'
+    print 'mean: %f' % (np.mean(dns_reqs))
+    print 'variance: %f' % (np.var(dns_reqs))
+    print 'standard deviation: %f' % (np.sqrt(np.var(dns_reqs)))
+
+    hist_dns = Pmf.MakeHistFromList(dns_reqs)
+    dns_vals, dns_freqs = hist_dns.Render()
+
+    print '-' * 23
+    print 'Statistics for downstream volume:'
+    print 'mean: %f' % (np.mean(downstream_vols))
+    print 'variance: %f' % (np.var(downstream_vols))
+    print 'standard deviation: %f' % (np.sqrt(np.var(downstream_vols)))
+
+    hist_vols = Pmf.MakeHistFromList(downstream_vols)
+    vols_vals, vols_freqs = hist_vols.Render()
 
     plt.figure(1)
-    plt.subplot(311)
+    plt.subplot(321)
     plt.plot(xaxis, http_gets, 'rx')
     plt.axhline(y=np.mean(http_gets))
     plt.ylabel('Nr. of HTTP GET requests')
     plt.xlabel('Batch Nr.')
 
-    plt.subplot(312)
+    plt.subplot(322)
+    plt.bar(http_vals, http_freqs)
+    plt.xlabel('# of http GET requests')
+    plt.ylabel('frequency')
+
+    plt.subplot(323)
     plt.plot(xaxis, dns_reqs, 'gx')
     plt.axhline(y=np.mean(dns_reqs))
     plt.ylabel('Nr. of DNS requests')
     plt.xlabel('Batch Nr.')
-    
-    plt.subplot(313)
+
+    plt.subplot(324)
+    plt.bar(dns_vals, dns_freqs)
+    plt.xlabel('# of http dns requests')
+    plt.ylabel('frequency')
+
+    plt.subplot(325)
     plt.plot(xaxis, downstream_vols, 'bx')
     plt.axhline(y=np.mean(downstream_vols))
     plt.ylabel('Downstream volume in Bytes')
     plt.xlabel('Batch Nr.')
-    
+
+    plt.subplot(326)
+    plt.bar(vols_vals, vols_freqs)
+    plt.xlabel('downstream size of request')
+    plt.ylabel('frequency')
+
     plt.show()
+
+
 
 def ip_blacklisted(ip):
     if ip in ip_blacklist:
