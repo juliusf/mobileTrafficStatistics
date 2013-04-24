@@ -10,7 +10,7 @@ function run_test {
     cat top500.txt | \
     while read URL; do
         echo "requesting $URL"
-        echo -n "$URL" | nc -4u -w1 $interceptionHostIp 1337
+        echo -n "$URL" | nc -4u -w1 10.0.0.23 1337
         adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
         sleep 60s
         adb shell killall com.android.chrome || errorHandler #kills the process of the currently active tab
@@ -69,7 +69,7 @@ scp -i ~/.ssh/id_rsa_experiment $interceptionHostIp:~/captures/$filename.pcap ca
 }
 
 function basic_measurement_cycle {
-
+sudo  route -n add 10.0.0.0/8 10.23.23.160 ## required for udp
 filename=`date +"%y-%m-%d--%H"`"_basic_measurement"
 clear_chrome_data
 start_capture  $filename
