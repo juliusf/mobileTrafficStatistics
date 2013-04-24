@@ -13,7 +13,7 @@ function run_test {
         echo -n "$URL" | nc -4u -w1 $interceptionHostIp 1337
         adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
         sleep 60s
-        adb shell killall com.android.chrome:sandboxed_process0 || errorHandler #kills the process of the currently active tab
+        adb shell killall com.android.chrome || errorHandler #kills the process of the currently active tab
         clear_chrome_data || errorHandler
   done;
 
