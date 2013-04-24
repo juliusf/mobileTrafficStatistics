@@ -9,7 +9,7 @@ function run_test {
 
     cat top500.txt | \
     while read URL; do
-        
+        echo "requesting $URL"
         echo -n "$URL" | nc -4u -w1 $interceptionHostIp 1337
         adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
         sleep 60s
