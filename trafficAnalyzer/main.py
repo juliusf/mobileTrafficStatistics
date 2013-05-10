@@ -10,7 +10,7 @@ import scipy.stats as stats
 import Pmf
 
 #constants
-DUT_IP = "10.0.0.42"
+DUT_IP = "10.0.0.23"
 lcurrent_packet = None
 request_batch = RequestBatch()
 processed_batches = []
@@ -18,9 +18,11 @@ options = None
 dns_blacklist = []
 ip_blacklist = []
 
+
 def main():
     global dns_blacklist
     global ip_blacklist
+    global DUT_IP
 
     #parse and populate the blacklist
     print "generating blacklists..."
@@ -38,6 +40,7 @@ def main():
                   action="store_true", dest="preview", default=False,
                   help="Generate a preview plot of the processed")
     parser.add_option('-g', '--gnuplot', help='creates a gnuplot DAT file')
+    parser.add_option('-d', '--dut', help='specifies the data source. either "desktop" or "mobile"')
 
     (opts, args) = parser.parse_args()
 
@@ -46,6 +49,16 @@ def main():
         parser.print_help()
         exit(-1)
 
+    if opts.dut is None:
+        print "You haven't specified a devce type. Either use 'mobile' or 'desktop'"
+        parser.print_help()
+        exit(-1)
+
+    if (opts.dut == 'mobile'):
+        DUT_IP = "10.0.0.23"
+
+    if (opts.dut == 'desktop'):
+        DUT_IP = "10.0.0.42"
 
     #parse the actual file
     parse_pcap(opts.file)
@@ -110,12 +123,21 @@ def parse_pcap(filename):
                 if not (( "173.194.69." in src or  "173.194.70." in src) and sport == 443):  #filters out the google subnets for SSL
                     request_batch.increase_downstreamvolume(len(pkt.getlayer(IP)))
 
+    #add the last batch
+    if request_batch._requestURL != "": # check wheter the requestbatch has been touched before
+        processed_batches.append(request_batch)
+
 
 def update_requestdomain(domain):
     #Update Database here
     global request_batch
     global processed_batches
 
+
+    if domain == request_batch.get_requesturl():
+        print "UDP packet doubling detected!: %s" % (domain)
+        return
+    print "currently processing: %s" % (domain)
     if request_batch._requestURL != "": # check wheter the requestbatch has been touched before
         processed_batches.append(request_batch)
      # print '-'*23
