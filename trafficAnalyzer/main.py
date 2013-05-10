@@ -8,21 +8,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
 import Pmf
+import sqlite3
 
 #constants
 DUT_IP = "10.0.0.23"
+dut_type = None
 lcurrent_packet = None
 request_batch = RequestBatch()
 processed_batches = []
 options = None
 dns_blacklist = []
 ip_blacklist = []
+filename = None
 
 
 def main():
     global dns_blacklist
     global ip_blacklist
     global DUT_IP
+    global dut_type
+    global filename
 
     #parse and populate the blacklist
     print "generating blacklists..."
@@ -39,6 +44,9 @@ def main():
     parser.add_option("-p", "--preview",
                   action="store_true", dest="preview", default=False,
                   help="Generate a preview plot of the processed")
+    parser.add_option("-s", "--storeData",
+                  action="store_true", dest="storedata", default=False,
+                  help="stores the data in the database")
     parser.add_option('-g', '--gnuplot', help='creates a gnuplot DAT file')
     parser.add_option('-d', '--dut', help='specifies the data source. either "desktop" or "mobile"')
 
@@ -48,17 +56,20 @@ def main():
         print "You haven't specified any pcap file.\n"
         parser.print_help()
         exit(-1)
-
+    filename = opts.file
+    
     if opts.dut is None:
-        print "You haven't specified a devce type. Either use 'mobile' or 'desktop'"
+        print "You haven't specified a device type. Either use 'mobile' or 'desktop'"
         parser.print_help()
         exit(-1)
 
     if (opts.dut == 'mobile'):
         DUT_IP = "10.0.0.23"
+        dut_type = 'mobile'
 
     if (opts.dut == 'desktop'):
         DUT_IP = "10.0.0.42"
+        dut_type = 'desktop'
 
     #parse the actual file
     parse_pcap(opts.file)
@@ -67,6 +78,9 @@ def main():
     print "creating preview..."
     if opts.preview:
         plot_preview()
+
+    if opts.storedata:
+        add_to_database()
 
 def parse_pcap(filename):
     #global vars
@@ -146,7 +160,7 @@ def update_requestdomain(domain):
       # print "DNS Requests: %s" % (request_batch.get_dnsrequests())
       # print "Downstream Volume: %s" % (request_batch.get_downstreamvolume())
     request_batch = RequestBatch()
-    request_batch.set_requesturl(domain)
+    request_batch.set_requesturl(str(domain))
 
 def extract_http():
     global current_packet
@@ -245,6 +259,27 @@ def dns_blacklisted(domain_name):
         return True
     else:
         return False
+
+def add_to_database():
+    global processed_batches
+    global dut_type
+    global filename
+
+    sqlconn = sqlite3.connect('measurements.sqlite')
+    c = sqlconn.cursor()
+    data = []
+    if dut_type == 'mobile':
+        for batch in processed_batches:
+            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume() ) )
+        c.executemany('insert into mobileMeasurement values (?,?,?,?,?)', data)
+
+    if dut_type == 'desktop':
+        for batch in processed_batches:
+            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume()) )
+       # print data
+        c.executemany('insert into desktopMeasurement values (?,?,?,?,?)', data)
+
+    sqlconn.commit()
 
 if __name__=="__main__":
    main()
