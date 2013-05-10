@@ -10,7 +10,7 @@ import scipy.stats as stats
 import Pmf
 
 #constants
-DUT_IP = "10.0.0.23"
+DUT_IP = "10.0.0.42"
 lcurrent_packet = None
 request_batch = RequestBatch()
 processed_batches = []
@@ -66,6 +66,11 @@ def parse_pcap(filename):
     for pkt in packets:
         #packet data extraction
         current_packet = pkt
+
+        if not pkt.haslayer(IP):
+            print "IP LAYER ERROR!"
+            continue
+
         ipdata = pkt[IP]
         src =  pkt.getlayer(IP).src
         dst = pkt.getlayer(IP).dst
