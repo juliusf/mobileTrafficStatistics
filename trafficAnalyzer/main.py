@@ -57,7 +57,7 @@ def main():
         parser.print_help()
         exit(-1)
     filename = opts.file
-    
+
     if opts.dut is None:
         print "You haven't specified a device type. Either use 'mobile' or 'desktop'"
         parser.print_help()
@@ -148,7 +148,7 @@ def update_requestdomain(domain):
     global processed_batches
 
 
-    if domain == request_batch.get_requesturl():
+    if str(domain) == str(request_batch.get_requesturl()):
         print "UDP packet doubling detected!: %s" % (domain)
         return
     print "currently processing: %s" % (domain)
@@ -270,14 +270,14 @@ def add_to_database():
     data = []
     if dut_type == 'mobile':
         for batch in processed_batches:
-            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume() ) )
-        c.executemany('insert into mobileMeasurement values (?,?,?,?,?)', data)
+            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
+        c.executemany('insert into mobileMeasurement values (?,?,?,?,?,?)', data)
 
     if dut_type == 'desktop':
         for batch in processed_batches:
-            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume()) )
+            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
        # print data
-        c.executemany('insert into desktopMeasurement values (?,?,?,?,?)', data)
+        c.executemany('insert into desktopMeasurement values (?,?,?,?,?,?)', data)
 
     sqlconn.commit()
 
