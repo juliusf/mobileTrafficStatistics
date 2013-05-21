@@ -20,7 +20,7 @@ options = None
 dns_blacklist = []
 ip_blacklist = []
 filename = None
-
+original_filename = None
 
 def main():
     global dns_blacklist
@@ -28,6 +28,7 @@ def main():
     global DUT_IP
     global dut_type
     global filename
+    global original_filename
 
     #parse and populate the blacklist
     print "generating blacklists..."
@@ -49,7 +50,7 @@ def main():
                   help="stores the data in the database")
     parser.add_option('-g', '--gnuplot', help='creates a gnuplot DAT file')
     parser.add_option('-d', '--dut', help='specifies the data source. either "desktop" or "mobile"')
-
+    parser.add_option('-o', '--originalFilename', help="specifies the original filename used for database storage")
     (opts, args) = parser.parse_args()
 
     if opts.file is None:
@@ -58,6 +59,11 @@ def main():
         exit(-1)
     filename = opts.file
 
+    if opts.originalFilename is None:
+        print "you havent specified the original filename"
+        parser.print_help()
+        exit(-1)
+    original_filename = opts.originalFilename
     if opts.dut is None:
         print "You haven't specified a device type. Either use 'mobile' or 'desktop'"
         parser.print_help()
@@ -264,18 +270,18 @@ def add_to_database():
     global processed_batches
     global dut_type
     global filename
-
+    global original_filename
     sqlconn = sqlite3.connect('measurements.sqlite')
     c = sqlconn.cursor()
     data = []
     if dut_type == 'mobile':
         for batch in processed_batches:
-            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
+            data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
         c.executemany('insert into mobileMeasurement values (?,?,?,?,?,?)', data)
 
     if dut_type == 'desktop':
         for batch in processed_batches:
-            data.append( (filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
+            data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
        # print data
         c.executemany('insert into desktopMeasurement values (?,?,?,?,?,?)', data)
 
