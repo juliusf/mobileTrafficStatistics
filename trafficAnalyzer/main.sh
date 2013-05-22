@@ -2,8 +2,8 @@
 
 inputFile=$1
 DUT=$2
-rm -rf tmp/* #clean up old mess
-sh dissector.sh $inputFile
+#rm -rf tmp/* #clean up old mess
+#sh dissector.sh $inputFile
 
 FILES=tmp/*
 for f in $FILES
