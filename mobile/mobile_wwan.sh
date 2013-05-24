@@ -10,7 +10,7 @@ function run_test {
     cat top500.txt | \
     while read URL; do
         echo "requesting $URL"
-        echo -n "$URL" | nc -4u -w1 10.0.0.23 1337
+        adb shell echo -n "$URL" | nc 91.203.214.50 1337
         adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
         sleep 60s
         adb shell killall com.android.chrome || errorHandler #kills the process of the currently active tab
@@ -75,7 +75,6 @@ clear_chrome_data
 start_capture  $filename
 sleep 10s
 run_test
-echo "now stopping caputre"
 stop_capture
 notify_client $filename
 copyResult $filename
