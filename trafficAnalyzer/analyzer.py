@@ -3,12 +3,15 @@
 from scapy.all import *
 from scapyhttp.HTTP import HTTP
 from RequestBatch import RequestBatch
+from os import listdir
+from os.path import isfile, join
 import optparse
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
 import Pmf
 import sqlite3
+
 
 #constants
 DUT_IP = "10.0.0.23"
@@ -38,7 +41,7 @@ def main():
     f = open('ipBlacklist.txt')
     ip_blacklist = f.readlines()
     f.close()
-
+    parse_all_files()
     parser = optparse.OptionParser()
     #commandline options
     parser.add_option('-f', '--file', help='the pcap file to be parsed')
@@ -87,6 +90,10 @@ def main():
 
     if opts.storedata:
         add_to_database()
+
+def parse_all_files():
+    onlyfiles = [ f for f in listdir('tmp/') if isfile(join('tmp/',f)) ]
+    print onlyfiles
 
 def parse_pcap(filename):
     #global vars
@@ -141,7 +148,7 @@ def parse_pcap(filename):
 
             if dst == DUT_IP  and not ip_blacklisted(src):
                 if not (( "173.194.69." in src or  "173.194.70." in src) and sport == 443):  #filters out the google subnets for SSL
-                    request_batch.increase_downstreamvolume(len(pkt.getlayer(IP)))
+                    request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) #without ethernet layer!
 
     #add the last batch
     if request_batch._requestURL != "": # check wheter the requestbatch has been touched before
@@ -176,83 +183,6 @@ def extract_http():
     if 'Method' in httpData:
         request_batch.increment_getrequests()
 
-def plot_preview():
-    global processed_batches
-
-    http_gets = []
-    dns_reqs = []
-    downstream_vols = []
-    xaxis = []
-
-    for batch in processed_batches:
-        http_gets.append(batch.get_getrequests())
-        dns_reqs.append(batch.get_dnsrequests())
-        downstream_vols.append(batch.get_downstreamvolume())
-        xaxis.append(len(http_gets))
-    print '-' * 23
-    print 'Statistics for http_gets:'
-    print 'mean: %f' % (np.mean(http_gets))
-    print 'variance: %f' % (np.var(http_gets))
-    print 'standard deviation: %f' % (np.sqrt(np.var(http_gets)))
-
-    hist_gets = Pmf.MakeHistFromList(http_gets)
-    http_vals, http_freqs = hist_gets.Render()
-
-    print '-' * 23
-    print 'Statistics for dns requests:'
-    print 'mean: %f' % (np.mean(dns_reqs))
-    print 'variance: %f' % (np.var(dns_reqs))
-    print 'standard deviation: %f' % (np.sqrt(np.var(dns_reqs)))
-
-    hist_dns = Pmf.MakeHistFromList(dns_reqs)
-    dns_vals, dns_freqs = hist_dns.Render()
-
-    print '-' * 23
-    print 'Statistics for downstream volume:'
-    print 'mean: %f' % (np.mean(downstream_vols))
-    print 'variance: %f' % (np.var(downstream_vols))
-    print 'standard deviation: %f' % (np.sqrt(np.var(downstream_vols)))
-
-    hist_vols = Pmf.MakeHistFromList(downstream_vols)
-    vols_vals, vols_freqs = hist_vols.Render()
-
-    plt.figure(1)
-    plt.subplot(321)
-    plt.plot(xaxis, http_gets, 'rx')
-    plt.axhline(y=np.mean(http_gets))
-    plt.ylabel('Nr. of HTTP GET requests')
-    plt.xlabel('Batch Nr.')
-
-    plt.subplot(322)
-    plt.bar(http_vals, http_freqs)
-    plt.xlabel('# of http GET requests')
-    plt.ylabel('frequency')
-
-    plt.subplot(323)
-    plt.plot(xaxis, dns_reqs, 'gx')
-    plt.axhline(y=np.mean(dns_reqs))
-    plt.ylabel('Nr. of DNS requests')
-    plt.xlabel('Batch Nr.')
-
-    plt.subplot(324)
-    plt.bar(dns_vals, dns_freqs)
-    plt.xlabel('# of http dns requests')
-    plt.ylabel('frequency')
-
-    plt.subplot(325)
-    plt.plot(xaxis, downstream_vols, 'bx')
-    plt.axhline(y=np.mean(downstream_vols))
-    plt.ylabel('Downstream volume in Bytes')
-    plt.xlabel('Batch Nr.')
-
-    plt.subplot(326)
-    plt.bar(vols_vals, vols_freqs)
-    plt.xlabel('downstream size of request')
-    plt.ylabel('frequency')
-
-    plt.show()
-
-
 
 def ip_blacklisted(ip):
     if ip in ip_blacklist:
@@ -276,12 +206,12 @@ def add_to_database():
     data = []
     if dut_type == 'mobile':
         for batch in processed_batches:
-            data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
+            data.append( ((filename + " | "+ original_filename), batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
         c.executemany('insert into mobileMeasurement values (?,?,?,?,?,?)', data)
 
     if dut_type == 'desktop':
         for batch in processed_batches:
-            data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
+            data.append( ( (filename + " | "+ original_filename), batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0 ) )
        # print data
         c.executemany('insert into desktopMeasurement values (?,?,?,?,?,?)', data)
 

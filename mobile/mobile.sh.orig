@@ -3,35 +3,25 @@
 
 interceptionHostIp=10.23.23.160
 interceptionHostRoot="~/mobileTraffic/interception/"
-dutIP=10.0.0.42
 filename=`date +"%y-%m-%d--%H"`"_"$1
-counter=0
 
 function run_test {
 
     cat top500.txt | \
     while read URL; do
-        counter=$[counter + 1]
-
-        echo "requesting $URL on desktop, request ID $counter"
-        echo -n "ID: $counter | DESKTOP | $URL" | nc -4u  -w1 10.0.0.23 1337
-        ssh -i ~/.ssh/id_rsa_experiment $dutIP firefox-bin $URL & 
+        echo "requesting $URL"
+        echo -n "$URL" | nc -4u -w1 10.0.0.23 1337
+        adb shell am start -a android.intent.action.VIEW -d $URL || errorHandler
+<<<<<<< HEAD
         sleep 60s
-        ssh -i ~/.ssh/id_rsa_experiment $dutIP wmctrl -c firefox  & #kills the process of the currently active tab
-        sleep 10s      
-        
-        #mobile part begins here
-        
-        echo "requesting $URL on mobile, request ID $counter"
-        echo -n "ID: $counter | MOBILE | $URL" | nc -4u  -w1 10.0.0.23 1337
-        timelimit -T 60 -t 55 adb shell am start -a android.intent.action.VIEW -d $URL 
-        sleep 60s
-        #adb shell killall org.mozilla.firefox  #kills the process of the currently active tab
-        adb shell am force-stop org.mozilla.firefox
-        sleep 5s
+        adb shell killall com.android.chrome || errorHandler #kills the process of the currently active tab
+=======
+        sleep 25s
+        adb shell killall com.android.chrome:sandboxed_process0 || errorHandler #kills the process of the currently active tab
+>>>>>>> 3f0b2676ce22061633b6ee8ff32fd5a468b58692
+        clear_chrome_data || errorHandler
+  done;
 
-     done;
-    echo "method terminated normally"
 }
 
 function notify_client {
@@ -42,6 +32,13 @@ function notify_client {
 }
 
 
+function clear_chrome_data {
+
+adb shell killall com.android.chrome
+adb shell rm -rf /data/data/com.android.chrome/cache
+adb push com.android.chrome/cache/ /data/data/com.android.chrome/cache
+
+} 
 
 function start_capture {
 filename=$1
@@ -55,6 +52,12 @@ ssh -i ~/.ssh/id_rsa_experiment $interceptionHostIp sudo killall tcpdump
 
 }
 
+function errorHandler {
+
+  sh nma.sh MobileTraffic "The experiment $1 FAILED! Dumping syslog..." 2
+  adb pull /devlog/system_log
+  exit -1
+}
 
 function getRemoteFileSize {
 
@@ -72,8 +75,9 @@ scp -i ~/.ssh/id_rsa_experiment $interceptionHostIp:~/captures/$filename.pcap ca
 
 function basic_measurement_cycle {
 sudo  route -n add 10.0.0.0/8 10.23.23.160 ## required for udp
-filename=`date +"%y-%m-%d--%H"`"_desktop_measurement"
-start_capture $filename
+filename=`date +"%y-%m-%d--%H"`"_basic_measurement"
+clear_chrome_data
+start_capture  $filename
 sleep 10s
 run_test
 stop_capture

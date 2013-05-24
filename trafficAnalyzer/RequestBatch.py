@@ -16,7 +16,7 @@ class RequestBatch(object):
 		else:
 			print "WARNING: unable to assign packet to RequestBatch"
 	def set_getrequests(self, nr_of_requests):
-		self.getCount = nr_of_requests
+		self._getCount = nr_of_requests
 
 	def get_getrequests(self):
 		return self._getCount

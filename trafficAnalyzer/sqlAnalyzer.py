@@ -7,6 +7,7 @@ import numpy as np
 import sqlite3
 import Pmf
 import Cdf
+import pdb
 
 #constants
 opts = None
@@ -50,9 +51,9 @@ def read_from_sql(sql_statement):
     conn = sqlite3.connect(opts.file)   
     cursor = conn.cursor()
     cursor.execute(sql_statement)
+
     for entry in cursor.fetchall():
         batch = RequestBatch()
-
         batch.set_filename(entry[0])
         batch.set_requesturl(entry[1])
         batch.set_getrequests(entry[2])
@@ -130,6 +131,7 @@ def plot_preview():
     plt.axhline(y=np.mean(downstream_vols))
     plt.ylabel('Downstream volume in Bytes')
     plt.xlabel('Batch Nr.')
+    plt.yscale('log')
 
     plt.subplot(326)
     plt.bar(vols_vals, vols_freqs)
@@ -138,13 +140,30 @@ def plot_preview():
 
     plt.show()
     
+    plt.figure(1)
+    plt.subplot(321)
     downstream_cdf = Cdf.MakeCdfFromHist(hist_vols, 'downstreamCdf')
     xaxis, yaxis = downstream_cdf.Render()
-    plt.plot(xaxis, cdf_to_ccdf(yaxis), 'rx')
+    plt.plot(xaxis, cdf_to_ccdf(yaxis), '-r')
     plt.ylabel('ccdf')
     plt.xlabel('Downstream Volume (Bytes)')
     plt.yscale('log')
     
+    plt.subplot(322)
+    gets_cdf = Cdf.MakeCdfFromHist(hist_gets, 'http_gets_Cdf')
+    xaxis, yaxis = gets_cdf.Render()
+    plt.plot(xaxis, cdf_to_ccdf(yaxis), '-g')
+    plt.ylabel('ccdf')
+    plt.xlabel('Number of http GET requests')
+    plt.yscale('log')
+
+    plt.subplot(323)
+    dns_cdf = Cdf.MakeCdfFromHist(hist_dns, 'dns_Cdf')
+    xaxis, yaxis = dns_cdf.Render()
+    plt.plot(xaxis, cdf_to_ccdf(yaxis), '-b')
+    plt.ylabel('ccdf')
+    plt.xlabel('Number of DNS requests')
+    plt.yscale('log')
     plt.show()
 
 

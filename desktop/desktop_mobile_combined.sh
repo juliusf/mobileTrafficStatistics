@@ -28,7 +28,7 @@ function run_test {
         sleep 60s
         #adb shell killall org.mozilla.firefox  #kills the process of the currently active tab
         adb shell am force-stop org.mozilla.firefox
-        sleep 5s
+        sleep 10s
 
      done;
     echo "method terminated normally"
