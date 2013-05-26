@@ -12,7 +12,19 @@ import pdb
 #constants
 opts = None
 args = None
-processed_batches = []
+processed_mobile_batches = []
+processed_desktop_batches = []
+
+mobile_http_gets = []
+mobile_dns_reqs = []
+mobile_downstream_vols = []
+mobile_xaxis = []
+
+desktop_http_gets = []
+desktop_dns_reqs = []
+desktop_downstream_vols = []
+desktop_xaxis = []
+
 def main():
     global opts
     global args
@@ -21,9 +33,6 @@ def main():
     parser = optparse.OptionParser()
     #commandline options
     parser.add_option('-f', '--file', help='specifies the sqlite database which contains the experiment resulsts')
-    parser.add_option('-e', '--experiment', help='specifies an experiment from the database')
-    parser.add_option('-t', '--type', help='specifies wheter mobile or desktop experiments should be plotted')
-
     (opts, args) = parser.parse_args()
     if opts.file is None:
         print "You haven't specified any sqlite file.\n"
@@ -32,23 +41,21 @@ def main():
 
 
 
-    if not opts.experiment is None:
-        sql = "select * from desktopMeasurement where filename='%s'" % (opts.experiment)
-        read_from_sql(sql)
-        sql = "select * from mobileMeasurement where filename='%s'" % (opts.experiment)
-        read_from_sql(sql)
 
-    if opts.type == "desktop":
-         sql = "select * from desktopMeasurement"
-         read_from_sql(sql)
 
-    if opts.type == "mobile":
-        sql = "select * from mobileMeasurement"
-        read_from_sql(sql)
+ 
+    sql = "select * from desktopMeasurement"
+    read_from_sql(sql, processed_desktop_batches)
+    sql = "select * from mobileMeasurement"
+    read_from_sql(sql, processed_mobile_batches)
 
-    plot_preview()
-def read_from_sql(sql_statement):
-    conn = sqlite3.connect(opts.file)   
+    
+    process_batches()
+    #plot_ccdf()
+    plot_ratio()
+
+def read_from_sql(sql_statement, batches):
+    conn = sqlite3.connect(opts.file)
     cursor = conn.cursor()
     cursor.execute(sql_statement)
 
@@ -61,21 +68,51 @@ def read_from_sql(sql_statement):
         batch.set_downstreamvolume(entry[4])
         batch.set_upstreamvolume(entry[5])
 
-        processed_batches.append(batch)
+        batches.append(batch)
 
-def plot_preview():
-    global processed_batches
+def process_batches():
+    global processed_mobile_batches
+    global processed_desktop_batches
 
-    http_gets = []
-    dns_reqs = []
-    downstream_vols = []
-    xaxis = []
+    global mobile_http_gets 
+    global mobile_dns_reqs 
+    global mobile_downstream_vols 
+    global mobile_xaxis 
 
-    for batch in processed_batches:
-        http_gets.append(batch.get_getrequests())
-        dns_reqs.append(batch.get_dnsrequests())
-        downstream_vols.append(batch.get_downstreamvolume())
-        xaxis.append(len(http_gets))
+    global desktop_http_gets 
+    global desktop_dns_reqs 
+    global desktop_downstream_vols 
+    global desktop_xaxis 
+
+    for batch in processed_desktop_batches:
+
+        desktop_http_gets.append(batch.get_getrequests())
+        desktop_dns_reqs.append(batch.get_dnsrequests())
+        desktop_downstream_vols.append(batch.get_downstreamvolume())
+        desktop_xaxis.append(len(desktop_http_gets))
+
+    for batch in processed_mobile_batches:
+
+        mobile_http_gets.append(batch.get_getrequests())
+        mobile_dns_reqs.append(batch.get_dnsrequests())
+        mobile_downstream_vols.append(batch.get_downstreamvolume())
+        mobile_xaxis.append(len(mobile_http_gets))
+
+def plot_values_and_hist():
+    processed_mobile_batches
+    processed_desktop_batches
+
+    global mobile_http_gets 
+    global mobile_dns_reqs 
+    global mobile_downstream_vols 
+    global mobile_xaxis 
+
+    global desktop_http_gets 
+    global desktop_dns_reqs 
+    global desktop_downstream_vols 
+    global desktop_xaxis 
+
+
     print '-' * 23
     print 'Statistics for http_gets:'
     print 'mean: %f' % (np.mean(http_gets))
@@ -105,7 +142,7 @@ def plot_preview():
 
     plt.figure(1)
     plt.subplot(321)
-    plt.plot(xaxis, http_gets, 'rx')
+    plt.plot(mobile_xaxis, mobile_http_gets, 'rx')
     plt.axhline(y=np.mean(http_gets))
     plt.ylabel('Nr. of HTTP GET requests')
     plt.xlabel('Batch Nr.')
@@ -139,34 +176,82 @@ def plot_preview():
     plt.ylabel('frequency')
 
     plt.show()
-    
+
+def plot_ccdf():
+    global processed_mobile_batches
+    global processed_desktop_batches
+
+    global mobile_http_gets 
+    global mobile_dns_reqs 
+    global mobile_downstream_vols 
+    global mobile_xaxis 
+
+    global desktop_http_gets 
+    global desktop_dns_reqs 
+    global desktop_downstream_vols 
+    global desktop_xaxis 
+
+    mobile_hist_gets = Pmf.MakeHistFromList(mobile_http_gets)
+    mobile_http_vals, mobile_http_freqs = mobile_hist_gets.Render()
+
+    mobile_hist_dns = Pmf.MakeHistFromList(mobile_dns_reqs)
+    mobile_dns_vals, mobile_dns_freqs = mobile_hist_dns.Render()
+
+    mobile_hist_vols = Pmf.MakeHistFromList(mobile_downstream_vols)
+    mobile_vols_vals, mobile_vols_freqs = mobile_hist_vols.Render()
+
+    desktop_hist_gets = Pmf.MakeHistFromList(desktop_http_gets)
+    desktop_http_vals, desktop_http_freqs = desktop_hist_gets.Render()
+
+    desktop_hist_dns = Pmf.MakeHistFromList(desktop_dns_reqs)
+    desktop_dns_vals, desktop_dns_freqs = desktop_hist_dns.Render()
+
+    desktop_hist_vols = Pmf.MakeHistFromList(desktop_downstream_vols)
+    desktop_vols_vals, desktop_vols_freqs = desktop_hist_vols.Render()
+
     plt.figure(1)
-    plt.subplot(321)
-    downstream_cdf = Cdf.MakeCdfFromHist(hist_vols, 'downstreamCdf')
-    xaxis, yaxis = downstream_cdf.Render()
-    plt.plot(xaxis, cdf_to_ccdf(yaxis), '-r')
+    ax = plt.subplot(321)
+    mobile_downstream_cdf = Cdf.MakeCdfFromHist(mobile_hist_vols, 'mobile_downstreamCdf')
+    mobile_xaxis, mobile_yaxis = mobile_downstream_cdf.Render()
+
+    desktop_downstream_cdf = Cdf.MakeCdfFromHist(desktop_hist_vols, 'desktop_downstreamCdf')
+    desktop_xaxis, desktop_yaxis = desktop_downstream_cdf.Render()
+
+    ax.plot(mobile_xaxis, cdf_to_ccdf(mobile_yaxis), '-r', label='mobile')
+    ax.plot(desktop_xaxis, cdf_to_ccdf(desktop_yaxis), '--g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Downstream Volume (Bytes)')
-    plt.yscale('log')
-    
-    plt.subplot(322)
-    gets_cdf = Cdf.MakeCdfFromHist(hist_gets, 'http_gets_Cdf')
-    xaxis, yaxis = gets_cdf.Render()
-    plt.plot(xaxis, cdf_to_ccdf(yaxis), '-g')
+    plt.xscale('log')
+    plt.legend()
+   
+
+    ax = plt.subplot(322)
+    mobile_gets_cdf = Cdf.MakeCdfFromHist(mobile_hist_gets, 'mobile_http_gets_Cdf')
+    mobile_xaxis, mobile_yaxis = mobile_gets_cdf.Render()
+
+    desktop_gets_cdf = Cdf.MakeCdfFromHist(desktop_hist_gets, 'desktop_http_gets_Cdf')
+    desktop_xaxis, desktop_yaxis = desktop_gets_cdf.Render()
+
+    ax.plot(mobile_xaxis, cdf_to_ccdf(mobile_yaxis), '-r', label='mobile')
+    ax.plot(desktop_xaxis,  cdf_to_ccdf(desktop_yaxis), '--g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Number of http GET requests')
-    plt.yscale('log')
+    #plt.xscale('log')
+    plt.legend()
 
-    plt.subplot(323)
-    dns_cdf = Cdf.MakeCdfFromHist(hist_dns, 'dns_Cdf')
-    xaxis, yaxis = dns_cdf.Render()
-    plt.plot(xaxis, cdf_to_ccdf(yaxis), '-b')
+
+    ax=plt.subplot(323)
+    mobile_dns_cdf = Cdf.MakeCdfFromHist(mobile_hist_dns, 'mobile_dns_Cdf')
+    mobile_xaxis, mobile_yaxis = mobile_dns_cdf.Render()
+    desktop_dns_cdf = Cdf.MakeCdfFromHist(desktop_hist_dns, 'desktop_dns_Cdf')
+    desktop_xaxis, desktop_yaxis = desktop_dns_cdf.Render()
+    ax.plot(mobile_xaxis, cdf_to_ccdf(mobile_yaxis), '-r', label='mobile')
+    ax.plot(desktop_xaxis, cdf_to_ccdf(desktop_yaxis), '--g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Number of DNS requests')
-    plt.yscale('log')
+    #plt.xscale('log')
+    plt.legend()
     plt.show()
-
-
 
 def cdf_to_ccdf(p):
     ccdf = []
@@ -174,7 +259,87 @@ def cdf_to_ccdf(p):
         ccdf.append(1-x)
     return ccdf
 
+def plot_ratio():
+    global processed_mobile_batches
+    global processed_desktop_batches
 
+    get_requests_x = []
+    get_requests_y = []
+
+    dns_requests_x = []
+    dns_requests_y = []
+
+    downstream_requests_x = []
+    downstream_requests_y = []
+
+    for batch in processed_desktop_batches:
+        get_requests_x.append(batch.get_getrequests())
+    for batch in processed_mobile_batches:
+        get_requests_y.append(batch.get_getrequests())
+
+    for batch in processed_desktop_batches:
+        dns_requests_x.append(batch.get_dnsrequests())
+    for batch in processed_mobile_batches:
+        dns_requests_y.append(batch.get_dnsrequests())
+
+    for batch in processed_desktop_batches:
+        downstream_requests_x.append(batch.get_downstreamvolume())
+    for batch in processed_mobile_batches:
+        downstream_requests_y.append(batch.get_downstreamvolume())
+
+    plt.figure(1)
+    ax = plt.subplot(321)
+    maximum = max(max(get_requests_y) + 50, max(get_requests_x) + 50) #super dirty hack!
+    #plt.ylim([0,maximum])
+    plt.xlim([0,maximum])
+    plt.ylim([0,maximum])
+    helper_x = range(maximum)
+    helper_y = helper_x
+    ax.plot(get_requests_x, get_requests_y, 'xr')
+    ax.plot(helper_x, helper_y, '-g')
+    plt.ylabel('# GET requests on mobile')
+    plt.xlabel('# GET requests on desktop')
+    #plt.xscale('log')
+    plt.grid()
+    plt.xscale('log')
+    plt.yscale('log')
+    
+
+    ax = plt.subplot(322)
+    maximum = max(max(dns_requests_y) + 50, max(dns_requests_x) + 50) #super dirty hack!
+    helper_x = range(maximum)
+    helper_y = helper_x
+    #plt.ylim([0,maximum])
+    plt.xlim([0,maximum])
+    plt.ylim([0,maximum])
+    ax.plot(dns_requests_x, dns_requests_y, 'xr')
+    ax.plot(helper_x, helper_y, '-g')
+    plt.ylabel('# DNS requests on mobile')
+    plt.xlabel('# DNS requests on desktop')
+    #plt.xscale('log')
+    plt.grid()
+    plt.xscale('log')
+    plt.yscale('log')
+   
+    ax = plt.subplot(323)
+    maximum = max(max(downstream_requests_y), max(downstream_requests_x) ) #super dirty hack!
+    helper_x = np.linspace(0,maximum, 1000000)
+    helper_y = helper_x
+    helper_y2 = helper_x / 10
+    #plt.ylim([0,maximum])
+    plt.xlim([0,maximum])
+    plt.ylim([0,maximum])
+    ax.plot(downstream_requests_x, downstream_requests_y, 'xr')
+    ax.plot(helper_x, helper_y, '-g')
+    ax.plot(helper_x, helper_y2, '-g')
+    plt.ylabel('Downstream volume on mobile')
+    plt.xlabel('Downstream volume on desktop')
+    #plt.xscale('log')
+    plt.grid()
+    plt.xscale('log')
+    plt.yscale('log')
+
+    plt.show()
 
 if __name__=="__main__":
     main()

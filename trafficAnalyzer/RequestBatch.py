@@ -8,7 +8,30 @@ class RequestBatch(object):
 		self._upstreamVolumeBytes = 0
 		self._requestURL = ""
 		self._fileName = ""
+		self._connectionCount = 0
+		self._nr_of_host_contacts = 0  #Without DNS contact!
 
+	def increment_nr_of_host_contacts(self):
+		if self._requestURL != "":
+			self._nr_of_host_contacts += 1
+		else:
+			print "WARNING: unable to assign packet to RequestBatch"
+	def get_nr_of_host_contacts(self):
+		return self._nr_of_host_contacts
+		
+	def set_nr_of_host_contacts(self, number):
+		self._nr_of_host_contacts = number
+
+	def increment_connection_count(self):
+		if self._requestURL != "":
+			self._connectionCount += 1
+		else:
+			print "WARNING: unable to assign packet to RequestBatch"
+	def set_connection_count(self, count):
+		self._connectionCount = count
+
+	def get_connection_count(self):
+		return self._connectionCount
 
 	def increment_getrequests(self):
 		if self._requestURL != "":
