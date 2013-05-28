@@ -166,12 +166,12 @@ def parse_pcap(filename):
                     request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) #without ethernet layer!
 
             #check for new Connection
-            if l4 == "TCP" and dst == DUT_IP and not ip_blacklisted(src):
+            if l4 == "TCP" and src == DUT_IP and not ip_blacklisted(src):
                 if pkt.getlayer(TCP).flags == 2: # decimal 2 == 0000 0010 == SYN
                     request_batch.increment_connection_count()
 
             #check for host contacts
-            if l4 == "TCP" and dst == DUT_IP and not ip_blacklisted(src):
+            if l4 == "TCP" and src == DUT_IP and not ip_blacklisted(src):
                 if not dst in contacted_hosts:
                     contacted_hosts.append(dst)
                     request_batch.increment_nr_of_host_contacts()

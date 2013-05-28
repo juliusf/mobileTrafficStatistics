@@ -10,7 +10,7 @@ class RequestBatch(object):
 		self._fileName = ""
 		self._connectionCount = 0
 		self._nr_of_host_contacts = 0  #Without DNS contact!
-
+		
 	def increment_nr_of_host_contacts(self):
 		if self._requestURL != "":
 			self._nr_of_host_contacts += 1

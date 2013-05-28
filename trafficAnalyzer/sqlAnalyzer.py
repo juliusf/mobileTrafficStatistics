@@ -19,11 +19,20 @@ mobile_http_gets = []
 mobile_dns_reqs = []
 mobile_downstream_vols = []
 mobile_xaxis = []
+mobile_nr_of_host_contacts = []
+mobile_upstream_vols = []
+mobile_nr_of_connections = []
 
 desktop_http_gets = []
 desktop_dns_reqs = []
 desktop_downstream_vols = []
 desktop_xaxis = []
+desktop_nr_of_host_contacts = []
+desktop_upstream_vols = []
+desktop_nr_of_connections = []
+
+
+
 
 def main():
     global opts
@@ -51,7 +60,7 @@ def main():
 
     
     process_batches()
-    #plot_ccdf()
+    plot_ccdf()
     plot_ratio()
 
 def read_from_sql(sql_statement, batches):
@@ -67,6 +76,8 @@ def read_from_sql(sql_statement, batches):
         batch.set_dnsrequests(entry[3])
         batch.set_downstreamvolume(entry[4])
         batch.set_upstreamvolume(entry[5])
+        batch.set_nr_of_host_contacts(entry[6])
+        batch.set_connection_count(entry[7 ])
 
         batches.append(batch)
 
@@ -78,11 +89,17 @@ def process_batches():
     global mobile_dns_reqs 
     global mobile_downstream_vols 
     global mobile_xaxis 
+    global mobile_nr_of_host_contacts
+    global mobile_upstream_vols
+    global mobile_nr_of_connections
 
     global desktop_http_gets 
     global desktop_dns_reqs 
     global desktop_downstream_vols 
     global desktop_xaxis 
+    global desktop_nr_of_host_contacts
+    global desktop_upstream_vols
+    global desktop_nr_of_connections
 
     for batch in processed_desktop_batches:
 
@@ -90,6 +107,8 @@ def process_batches():
         desktop_dns_reqs.append(batch.get_dnsrequests())
         desktop_downstream_vols.append(batch.get_downstreamvolume())
         desktop_xaxis.append(len(desktop_http_gets))
+        desktop_nr_of_connections.append(batch.get_connection_count())
+        desktop_nr_of_host_contacts.append(batch.get_nr_of_host_contacts())
 
     for batch in processed_mobile_batches:
 
@@ -97,6 +116,8 @@ def process_batches():
         mobile_dns_reqs.append(batch.get_dnsrequests())
         mobile_downstream_vols.append(batch.get_downstreamvolume())
         mobile_xaxis.append(len(mobile_http_gets))
+        mobile_nr_of_connections.append(batch.get_connection_count())
+        mobile_nr_of_host_contacts.append(batch.get_nr_of_host_contacts())
 
 def plot_values_and_hist():
     processed_mobile_batches
@@ -177,6 +198,12 @@ def plot_values_and_hist():
 
     plt.show()
 
+def list_to_ccdf(arr, CdfName):
+    array_hist = Pmf.MakeHistFromList(arr)
+    array_cdf =  Cdf.MakeCdfFromHist(array_hist, CdfName)
+    array_x_axis, array_y_axis = array_cdf.Render()
+    return [array_x_axis, cdf_to_ccdf(array_y_axis)]
+
 def plot_ccdf():
     global processed_mobile_batches
     global processed_desktop_batches
@@ -185,40 +212,25 @@ def plot_ccdf():
     global mobile_dns_reqs 
     global mobile_downstream_vols 
     global mobile_xaxis 
+    global mobile_nr_of_host_contacts
+    global mobile_upstream_vols
+    global mobile_nr_of_connections
 
     global desktop_http_gets 
     global desktop_dns_reqs 
     global desktop_downstream_vols 
     global desktop_xaxis 
+    global desktop_nr_of_host_contacts
+    global desktop_upstream_vols
+    global desktop_nr_of_connections
 
-    mobile_hist_gets = Pmf.MakeHistFromList(mobile_http_gets)
-    mobile_http_vals, mobile_http_freqs = mobile_hist_gets.Render()
-
-    mobile_hist_dns = Pmf.MakeHistFromList(mobile_dns_reqs)
-    mobile_dns_vals, mobile_dns_freqs = mobile_hist_dns.Render()
-
-    mobile_hist_vols = Pmf.MakeHistFromList(mobile_downstream_vols)
-    mobile_vols_vals, mobile_vols_freqs = mobile_hist_vols.Render()
-
-    desktop_hist_gets = Pmf.MakeHistFromList(desktop_http_gets)
-    desktop_http_vals, desktop_http_freqs = desktop_hist_gets.Render()
-
-    desktop_hist_dns = Pmf.MakeHistFromList(desktop_dns_reqs)
-    desktop_dns_vals, desktop_dns_freqs = desktop_hist_dns.Render()
-
-    desktop_hist_vols = Pmf.MakeHistFromList(desktop_downstream_vols)
-    desktop_vols_vals, desktop_vols_freqs = desktop_hist_vols.Render()
 
     plt.figure(1)
     ax = plt.subplot(321)
-    mobile_downstream_cdf = Cdf.MakeCdfFromHist(mobile_hist_vols, 'mobile_downstreamCdf')
-    mobile_xaxis, mobile_yaxis = mobile_downstream_cdf.Render()
-
-    desktop_downstream_cdf = Cdf.MakeCdfFromHist(desktop_hist_vols, 'desktop_downstreamCdf')
-    desktop_xaxis, desktop_yaxis = desktop_downstream_cdf.Render()
-
-    ax.plot(mobile_xaxis, cdf_to_ccdf(mobile_yaxis), '-r', label='mobile')
-    ax.plot(desktop_xaxis, cdf_to_ccdf(desktop_yaxis), '--g', label='desktop')
+    x_axis, y_axis = list_to_ccdf(mobile_downstream_vols, 'mobile_downstream_vols')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    x_axis, y_axis = list_to_ccdf(desktop_downstream_vols, 'desktop_downstream_vols')
+    ax.plot(x_axis, y_axis, '-g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Downstream Volume (Bytes)')
     plt.xscale('log')
@@ -226,14 +238,10 @@ def plot_ccdf():
    
 
     ax = plt.subplot(322)
-    mobile_gets_cdf = Cdf.MakeCdfFromHist(mobile_hist_gets, 'mobile_http_gets_Cdf')
-    mobile_xaxis, mobile_yaxis = mobile_gets_cdf.Render()
-
-    desktop_gets_cdf = Cdf.MakeCdfFromHist(desktop_hist_gets, 'desktop_http_gets_Cdf')
-    desktop_xaxis, desktop_yaxis = desktop_gets_cdf.Render()
-
-    ax.plot(mobile_xaxis, cdf_to_ccdf(mobile_yaxis), '-r', label='mobile')
-    ax.plot(desktop_xaxis,  cdf_to_ccdf(desktop_yaxis), '--g', label='desktop')
+    x_axis, y_axis = list_to_ccdf(mobile_http_gets, 'mobile_gets')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    x_axis, y_axis = list_to_ccdf(desktop_http_gets, 'desktop_gets')
+    ax.plot(x_axis, y_axis, '-g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Number of http GET requests')
     #plt.xscale('log')
@@ -241,15 +249,33 @@ def plot_ccdf():
 
 
     ax=plt.subplot(323)
-    mobile_dns_cdf = Cdf.MakeCdfFromHist(mobile_hist_dns, 'mobile_dns_Cdf')
-    mobile_xaxis, mobile_yaxis = mobile_dns_cdf.Render()
-    desktop_dns_cdf = Cdf.MakeCdfFromHist(desktop_hist_dns, 'desktop_dns_Cdf')
-    desktop_xaxis, desktop_yaxis = desktop_dns_cdf.Render()
-    ax.plot(mobile_xaxis, cdf_to_ccdf(mobile_yaxis), '-r', label='mobile')
-    ax.plot(desktop_xaxis, cdf_to_ccdf(desktop_yaxis), '--g', label='desktop')
+    x_axis, y_axis = list_to_ccdf(mobile_dns_reqs, 'mobile_dns')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    x_axis, y_axis = list_to_ccdf(desktop_dns_reqs, 'desktop_dns')
+    ax.plot(x_axis, y_axis, '-g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Number of DNS requests')
     #plt.xscale('log')
+    plt.legend()
+
+    ax=plt.subplot(324)
+    x_axis, y_axis = list_to_ccdf(mobile_nr_of_connections, 'mobile_connections')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    x_axis, y_axis = list_to_ccdf(desktop_nr_of_connections, 'desktop_dns')
+    ax.plot(x_axis, y_axis, '-g', label='desktop')
+    plt.ylabel('ccdf')
+    plt.xlabel('Number of Connections')
+    #plt.xscale('log')
+    plt.legend()
+
+    ax=plt.subplot(325)
+    x_axis, y_axis = list_to_ccdf(mobile_nr_of_host_contacts, 'mobile_connections')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    x_axis, y_axis = list_to_ccdf(desktop_nr_of_host_contacts, 'desktop_dns')
+    ax.plot(x_axis, y_axis, '-g', label='desktop')
+    plt.ylabel('ccdf')
+    plt.xlabel('Number of hosts contacted')
+    plt.xscale('log')
     plt.legend()
     plt.show()
 
@@ -291,8 +317,8 @@ def plot_ratio():
     ax = plt.subplot(321)
     maximum = max(max(get_requests_y) + 50, max(get_requests_x) + 50) #super dirty hack!
     #plt.ylim([0,maximum])
-    plt.xlim([0,maximum])
-    plt.ylim([0,maximum])
+    plt.xlim([1,maximum])
+    plt.ylim([1,maximum])
     helper_x = range(maximum)
     helper_y = helper_x
     ax.plot(get_requests_x, get_requests_y, 'xr')
@@ -310,8 +336,8 @@ def plot_ratio():
     helper_x = range(maximum)
     helper_y = helper_x
     #plt.ylim([0,maximum])
-    plt.xlim([0,maximum])
-    plt.ylim([0,maximum])
+    plt.xlim([1,maximum])
+    plt.ylim([1,maximum])
     ax.plot(dns_requests_x, dns_requests_y, 'xr')
     ax.plot(helper_x, helper_y, '-g')
     plt.ylabel('# DNS requests on mobile')
@@ -327,8 +353,8 @@ def plot_ratio():
     helper_y = helper_x
     helper_y2 = helper_x / 10
     #plt.ylim([0,maximum])
-    plt.xlim([0,maximum])
-    plt.ylim([0,maximum])
+    plt.xlim([1,maximum])
+    plt.ylim([1,maximum])
     ax.plot(downstream_requests_x, downstream_requests_y, 'xr')
     ax.plot(helper_x, helper_y, '-g')
     ax.plot(helper_x, helper_y2, '-g')
