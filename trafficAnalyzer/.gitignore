@@ -1,2 +1,6 @@
 *.pcap
 *.sqlite
+*.pdf
+*.png
+*.bak
+*.json
