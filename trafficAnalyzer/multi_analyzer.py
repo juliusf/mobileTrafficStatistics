@@ -8,11 +8,13 @@ from os.path import isfile, join
 from subprocess import call
 import os
 import optparse
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
 import Pmf
 import sqlite3
+import json
+import re
+import pdb
 
 
 #constants
@@ -28,6 +30,7 @@ ip_blacklist = []
 filename = None
 original_filename = None
 contacted_hosts = []
+webbugs = []
 
 def main():
     global dns_blacklist
@@ -36,6 +39,7 @@ def main():
     global dut_type
     global filename
     global original_filename
+    global webbugs
 
     #parse and populate the blacklist
     print "generating blacklists..."
@@ -45,12 +49,23 @@ def main():
     f = open('ipBlacklist.txt')
     ip_blacklist = f.readlines()
     f.close()
-    
+
+    #create the webbug pattern
+    json_data=open('ghostery-bugs.json').read()
+    data = json.loads(json_data)
+    for entry in data["bugs"]:
+        webbugs.append(re.compile(entry["pattern"], re.I))
+
+    json_data=open('ghostery-lsos.json').read()
+    data = json.loads(json_data)
+    for entry in data:
+        webbugs.append(re.compile(entry["pattern"], re.I))
+
     parser = optparse.OptionParser()
     #commandline options
     parser.add_option('-f', '--filename', help="specifies the filename")
     (opts, args) = parser.parse_args()
-    
+
     #commandline options
 
     if opts.filename is None:
@@ -58,7 +73,7 @@ def main():
         parser.print_help()
         exit(-1)
     original_filename = opts.filename
-    
+
 
 
     if  'firefox' in original_filename:
@@ -81,11 +96,11 @@ def handle_sql_files():
 
     conn = sqlite3.connect(original_filename + '.sqlite')
     c = conn.cursor()
-    c.execute('''create table mobileMeasurement( fileName text,  batchID text, getRequests INTEGER, dnsRequests INTEGER, downstreamVolume INTEGER, upstreamVolume INTEGER, numberOfHostsContacted INTEGER, numberOfConnections INTEGER)''' )
+    c.execute('''create table mobileMeasurement( ID INTEGER PRIMARY KEY, fileName text,  batchID text, getRequests INTEGER, dnsRequests INTEGER, downstreamVolume INTEGER, upstreamVolume INTEGER, numberOfHostsContacted INTEGER, numberOfConnections INTEGER, nrOfWebBugs INTEGER)''' )
     conn.commit()
 
     c = conn.cursor()
-    c.execute('''create table desktopMeasurement( fileName text,  batchID text, getRequests INTEGER, dnsRequests INTEGER, downstreamVolume INTEGER, upstreamVolume INTEGER, numberOfHostsContacted INTEGER, numberOfConnections INTEGER)''' )
+    c.execute('''create table desktopMeasurement( ID INTEGER PRIMARY KEY, fileName text,  batchID text, getRequests INTEGER, dnsRequests INTEGER, downstreamVolume INTEGER, upstreamVolume INTEGER, numberOfHostsContacted INTEGER, numberOfConnections INTEGER, nrOfWebBugs INTEGER)''' )
     conn.commit()
 
     c.close()
@@ -144,7 +159,7 @@ def parse_pcap(filename):
         if l4 == "TCP":
             dport = pkt.getlayer(TCP).dport
             sport = pkt.getlayer(TCP).sport
-            
+
 
         #check for new url request block:
 
@@ -166,8 +181,8 @@ def parse_pcap(filename):
                     request_batch.increase_downstreamvolume(len(pkt.getlayer(IP))) #without ethernet layer!
 
             #check for new Connection
-            if l4 == "TCP" and src == DUT_IP and not ip_blacklisted(src):
-                if pkt.getlayer(TCP).flags == 2: # decimal 2 == 0000 0010 == SYN
+            if l4 == "TCP" and dst == DUT_IP and not ip_blacklisted(src):
+                if pkt.getlayer(TCP).flags == 18: # decimal 18 == 0001 0010 == SYN ACK
                     request_batch.increment_connection_count()
 
             #check for host contacts
@@ -175,6 +190,8 @@ def parse_pcap(filename):
                 if not dst in contacted_hosts:
                     contacted_hosts.append(dst)
                     request_batch.increment_nr_of_host_contacts()
+                    if  request_batch.get_nr_of_host_contacts() > 200:
+                        pdb.set_trace() 
 
 
 def update_requestdomain(domain):
@@ -208,10 +225,18 @@ def update_requestdomain(domain):
 def extract_http():
     global current_packet
     global request_batch
+    global webbugs
     httpData = current_packet.getlayer(HTTP).payload.fields
 
     if 'Method' in httpData:
         request_batch.increment_getrequests()
+        
+    #check for Webbugs
+        for pattern in webbugs:
+            if pattern.search(httpData["Method"]):
+                #Bug Found!
+                request_batch.increment_nr_of_web_bugs()
+                break
 
 
 def ip_blacklisted(ip):
@@ -238,14 +263,14 @@ def add_to_database():
 
     for batch in processed_batches:
         if '| MOBILE |' in batch.get_requesturl():
-            mobile_data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0, batch.get_connection_count(), batch.get_nr_of_host_contacts()) )
+            mobile_data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0,  batch.get_nr_of_host_contacts(), batch.get_connection_count(), batch.get_nr_of_web_bugs() ) )
         if '| DESKTOP |' in batch.get_requesturl():
-            desktop_data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0, batch.get_connection_count(), batch.get_nr_of_host_contacts()) )
+            desktop_data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0, batch.get_nr_of_host_contacts(), batch.get_connection_count(), batch.get_nr_of_web_bugs() ) )
 
     if mobile_data :
-        c.executemany('insert into mobileMeasurement values (?,?,?,?,?,?,?,?)', mobile_data)
+        c.executemany('insert into mobileMeasurement values (null,?,?,?,?,?,?,?,?,?)', mobile_data)
     if desktop_data:
-        c.executemany('insert into desktopMeasurement values (?,?,?,?,?,?,?,?)', desktop_data) 
+        c.executemany('insert into desktopMeasurement values (null,?,?,?,?,?,?,?,?,?)', desktop_data)
 
     sqlconn.commit()
 
