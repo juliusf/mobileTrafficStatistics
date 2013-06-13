@@ -3,6 +3,7 @@
 from scapy.all import *
 from scapyhttp.HTTP import HTTP
 from RequestBatch import RequestBatch
+from Connection import Connection
 from os import listdir
 from os.path import isfile, join
 from subprocess import call
@@ -14,7 +15,7 @@ import Pmf
 import sqlite3
 import json
 import re
-import pdb
+import pudb
 
 
 #constants
@@ -103,6 +104,12 @@ def handle_sql_files():
     c.execute('''create table desktopMeasurement( ID INTEGER PRIMARY KEY, fileName text,  batchID text, getRequests INTEGER, dnsRequests INTEGER, downstreamVolume INTEGER, upstreamVolume INTEGER, numberOfHostsContacted INTEGER, numberOfConnections INTEGER, nrOfWebBugs INTEGER)''' )
     conn.commit()
 
+    c = conn.cursor()
+    c.execute('''create table mobileConnections( ID INTEGER PRIMARY KEY, ipAddr TEXT, volume INTEGER)''')
+    c.close()
+
+    c = conn.cursor()
+    c.execute('''create table desktopConnections( ID INTEGER PRIMARY KEY, ipAddr TEXT, volume INTEGER)''')
     c.close()
 
 def parse_all_files():
@@ -190,9 +197,21 @@ def parse_pcap(filename):
                 if not dst in contacted_hosts:
                     contacted_hosts.append(dst)
                     request_batch.increment_nr_of_host_contacts()
-                    if  request_batch.get_nr_of_host_contacts() > 200:
-                        pdb.set_trace() 
+                    
+            if l4 == "TCP":
+                request_batch.check_connection(current_packet)
+                if  src == DUT_IP and not( ip_blacklisted(src) and dport == 443):
+                    if pkt.getlayer(TCP).flags == 2: # == SYN
+                        request_batch.add_new_connection(current_packet)
 
+                
+
+def process_TCP_Stream():
+    global request_batch
+    for connection in request_batch.get_connections():
+        if current_packet.getlayer(TCP).answers(connection.get_active_packet().getlayer(TCP)) == 1:
+            connection.increase_volume(int(len(current_packet.getlayer(IP))))
+            connection.set_active_packet(current_packet)
 
 def update_requestdomain(domain):
     #Update Database here
@@ -261,17 +280,26 @@ def add_to_database():
     mobile_data = []
     desktop_data = []
 
+    mobile_connection = []
+    desktop_connection = []
     for batch in processed_batches:
         if '| MOBILE |' in batch.get_requesturl():
             mobile_data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0,  batch.get_nr_of_host_contacts(), batch.get_connection_count(), batch.get_nr_of_web_bugs() ) )
+            for connection in batch.get_connections():
+                mobile_connection.append( (connection.get_dst_ip(), connection.get_volume()) )
         if '| DESKTOP |' in batch.get_requesturl():
             desktop_data.append( (original_filename, batch.get_requesturl(), batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0, batch.get_nr_of_host_contacts(), batch.get_connection_count(), batch.get_nr_of_web_bugs() ) )
-
-    if mobile_data :
+            for connection in batch.get_connections():
+                desktop_connection.append( (connection.get_dst_ip(), connection.get_volume()) )
+    if mobile_data:
         c.executemany('insert into mobileMeasurement values (null,?,?,?,?,?,?,?,?,?)', mobile_data)
     if desktop_data:
         c.executemany('insert into desktopMeasurement values (null,?,?,?,?,?,?,?,?,?)', desktop_data)
 
+    if mobile_connection:
+        c.executemany('insert into mobileConnections values (null,?,?)', mobile_connection)
+    if desktop_connection:
+        c.executemany('insert into desktopConnections values (null,?,?)', desktop_connection)
     sqlconn.commit()
 
 if __name__=="__main__":

@@ -216,8 +216,8 @@ def plot_nr_of_webbugs_ccdf(plotnumber, subplot_number):
     ax.plot(x_axis, y_axis, '-g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Number of Webbugs')
-    plt.xscale('log')
-    plt.yscale('log')
+    #plt.xscale('log')
+    #plt.yscale('log')
     plt.grid()
     plt.legend()
 #----------------------------------------------------------------
@@ -515,10 +515,17 @@ def plot_nr_of_webbugs_comparative_ccdf(plotnumer, subplot_number):
     ax.plot(x_axis, y_axis, '-r', label='mobile/desktop ratio')
     plt.ylabel('ccdf')
     plt.xlabel('mobile/desktop ratio of webbugs')
-    plt.xscale('log')
-    plt.yscale('log')
+    #plt.xscale('log')
+    #plt.yscale('log')
     plt.grid()
 #----------------------------------------------------------------
+def plot_mobile_longtail_downstream():
+    downstream_y = []
+    downstream_x = []
+    
+    for batch in processed_mobile_batches:
+        
+
 def read_from_sql(sql_statement, batches):
     conn = sqlite3.connect(opts.file)
     cursor = conn.cursor()
