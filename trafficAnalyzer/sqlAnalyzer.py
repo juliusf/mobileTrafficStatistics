@@ -9,6 +9,8 @@ import sqlite3
 import Pmf
 import Cdf
 import pdb
+import socket
+import sys
 
 #constants
 opts = None
@@ -34,7 +36,8 @@ desktop_upstream_vols = []
 desktop_nr_of_connections = []
 desktop_nr_of_webbugs = []
 
-
+mobile_per_connection_volume = []
+desktop_per_connection_volume = []
 
 def main():
     global opts
@@ -43,7 +46,9 @@ def main():
     # CLI Option parser
     parser = optparse.OptionParser()
     parser.add_option('-f', '--file', help='specifies the sqlite database which contains the experiment resulsts')
+    parser.add_option('-d', '--dns', action="store_true", default=False, help='performs a DNS reverse lookup for every connection')
     (opts, args) = parser.parse_args()
+    
     if opts.file is None:
         print "You haven't specified any sqlite file.\n"
         parser.print_help()
@@ -55,7 +60,12 @@ def main():
     sql = "select * from mobileMeasurement"
     read_from_sql(sql, processed_mobile_batches)
     process_batches()
+    #per connection statistics
+    extract_all_connections()
 
+    if opts.dns == True:
+        perform_reverse_dns_lookup("mobile")
+        perform_reverse_dns_lookup("desktop")
 
     pp = PdfPages('multipage.pdf')
     plot_downstream_ccdf(1, 211)
@@ -100,6 +110,8 @@ def main():
     plot_nr_of_webbugs_comparative_ccdf(12,111)
     plt.savefig(pp, format='pdf')
 
+    plot_per_connection_downstream_ccdf(13, 111)
+    plt.savefig(pp, format='pdf')
     pp.close()
 
 
@@ -216,8 +228,8 @@ def plot_nr_of_webbugs_ccdf(plotnumber, subplot_number):
     ax.plot(x_axis, y_axis, '-g', label='desktop')
     plt.ylabel('ccdf')
     plt.xlabel('Number of Webbugs')
-    #plt.xscale('log')
-    #plt.yscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.grid()
     plt.legend()
 #----------------------------------------------------------------
@@ -337,7 +349,7 @@ def plot_nr_of_host_contacts_comparative(plotnumber, subplot_number):
         host_contacts_x.append(batch.get_nr_of_host_contacts())
     for batch in processed_mobile_batches:
         host_contacts_y.append(batch.get_nr_of_host_contacts())
-    
+
     plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
     maximum = max(max(host_contacts_x), max(host_contacts_y) ) #super dirty hack!
@@ -383,7 +395,7 @@ def plot_nr_of_webbugs_comparative(plotnumber, subplot_number):
     #plt.yscale('log')
     plt.grid()
 #----------------------------------------------------------------
-def plot_downstream_comparative_ccdf(plotnumer, subplot_number):
+def plot_downstream_comparative_ccdf(plotnumber, subplot_number):
     downstream_requests_x = []
     downstream_requests_y = []
     ratio = []
@@ -394,7 +406,7 @@ def plot_downstream_comparative_ccdf(plotnumer, subplot_number):
         downstream_requests_y.append(batch.get_downstreamvolume())
     for desktop, mobile in zip(downstream_requests_x, downstream_requests_y):
         ratio.append(float(mobile)/float(desktop))
-    plt.figure(plotnumer)
+    plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
     x_axis, y_axis = list_to_ccdf(ratio, 'mobile_connections')
     ax.plot(x_axis, y_axis, '-r', label='mobile/desktop ratio')
@@ -404,7 +416,7 @@ def plot_downstream_comparative_ccdf(plotnumer, subplot_number):
     plt.yscale('log')
     plt.grid()
 
-def plot_get_comparative_ccdf(plotnumer, subplot_number):
+def plot_get_comparative_ccdf(plotnumber, subplot_number):
     get_requests_x = []
     get_requests_y = []
     ratio = []
@@ -415,10 +427,10 @@ def plot_get_comparative_ccdf(plotnumer, subplot_number):
         get_requests_y.append(batch.get_getrequests())
     for desktop, mobile in zip(get_requests_x, get_requests_y):
         if float(desktop) == 0.0:
-            ratio.append(np.NINF)
+            ratio.append(1e400)
         else:
             ratio.append(float(mobile)/float(desktop))
-    plt.figure(plotnumer)
+    plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
     x_axis, y_axis = list_to_ccdf(ratio, 'mobile_connections')
     ax.plot(x_axis, y_axis, '-r', label='mobile/desktop ratio')
@@ -428,7 +440,7 @@ def plot_get_comparative_ccdf(plotnumer, subplot_number):
     plt.yscale('log')
     plt.grid()
 
-def plot_dns_comparative_ccdf(plotnumer, subplot_number):
+def plot_dns_comparative_ccdf(plotnumber, subplot_number):
     dns_requests_x = []
     dns_requests_y = []
     ratio = []
@@ -439,7 +451,7 @@ def plot_dns_comparative_ccdf(plotnumer, subplot_number):
         dns_requests_y.append(batch.get_dnsrequests())
     for desktop, mobile in zip(dns_requests_x, dns_requests_y):
         ratio.append(float(mobile)/float(desktop))
-    plt.figure(plotnumer)
+    plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
     x_axis, y_axis = list_to_ccdf(ratio, 'mobile_connections')
     ax.plot(x_axis, y_axis, '-r', label='mobile/desktop ratio')
@@ -449,7 +461,7 @@ def plot_dns_comparative_ccdf(plotnumer, subplot_number):
     plt.yscale('log')
     plt.grid()
 
-def plot_nr_of_connections_comparative_ccdf(plotnumer, subplot_number):
+def plot_nr_of_connections_comparative_ccdf(plotnumber, subplot_number):
     connections_x = []
     connections_y = []
     ratio = []
@@ -459,10 +471,10 @@ def plot_nr_of_connections_comparative_ccdf(plotnumer, subplot_number):
         connections_y.append(batch.get_connection_count())
     for desktop, mobile in zip(connections_x, connections_y):
         if float(desktop) == 0.0:
-            ratio.append(np.NINF)
+            ratio.append(1e400)
         else:
             ratio.append(float(mobile)/float(desktop))
-    plt.figure(plotnumer)
+    plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
     x_axis, y_axis = list_to_ccdf(ratio, 'mobile_connections')
     ax.plot(x_axis, y_axis, '-r', label='mobile/desktop ratio')
@@ -472,7 +484,7 @@ def plot_nr_of_connections_comparative_ccdf(plotnumer, subplot_number):
     plt.yscale('log')
     plt.grid()
 
-def plot_nr_of_host_contacts_comparative_ccdf(plotnumer, subplot_number):
+def plot_nr_of_host_contacts_comparative_ccdf(plotnumber, subplot_number):
     host_contacts_x = []
     host_contacts_y = []
     ratio = []
@@ -482,10 +494,10 @@ def plot_nr_of_host_contacts_comparative_ccdf(plotnumer, subplot_number):
         host_contacts_y.append(batch.get_nr_of_host_contacts())
     for desktop, mobile in zip(host_contacts_x, host_contacts_y):
         if float(desktop) == 0.0:
-            ratio.append(np.NINF)
+            ratio.append(1e400)
         else:
             ratio.append(float(mobile)/float(desktop))
-    plt.figure(plotnumer)
+    plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
     x_axis, y_axis = list_to_ccdf(ratio, 'mobile_connections')
     ax.plot(x_axis, y_axis, '-r', label='mobile/desktop ratio')
@@ -495,7 +507,7 @@ def plot_nr_of_host_contacts_comparative_ccdf(plotnumer, subplot_number):
     plt.yscale('log')
     plt.grid()
 
-def plot_nr_of_webbugs_comparative_ccdf(plotnumer, subplot_number):
+def plot_nr_of_webbugs_comparative_ccdf(plotnumber, subplot_number):
     webbugs_x = []
     webbugs_y = []
     ratio = []
@@ -506,16 +518,16 @@ def plot_nr_of_webbugs_comparative_ccdf(plotnumer, subplot_number):
          webbugs_y.append(batch.get_nr_of_web_bugs())
     for desktop, mobile in zip(webbugs_x, webbugs_y):
         if float(desktop) == 0.0:
-            ratio.append(np.NINF)
+            ratio.append(1e400)
         else:
             ratio.append(float(mobile)/float(desktop))
-    plt.figure(plotnumer)
+    plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
     x_axis, y_axis = list_to_ccdf(ratio, 'mobile_connections')
     ax.plot(x_axis, y_axis, '-r', label='mobile/desktop ratio')
     plt.ylabel('ccdf')
     plt.xlabel('mobile/desktop ratio of webbugs')
-    #plt.xscale('log')
+    plt.xscale('log')
     #plt.yscale('log')
     plt.grid()
 #----------------------------------------------------------------
@@ -524,8 +536,25 @@ def plot_mobile_longtail_downstream():
     downstream_x = []
     
     for batch in processed_mobile_batches:
-        
+        pass
+#-----------------------------------------------------------------
+def plot_per_connection_downstream_ccdf(plotnumber, subplot_number):
+    global mobile_per_connection_volume
+    global desktop_per_connection_volume
 
+    plt.figure(plotnumber)
+    ax = plt.subplot(subplot_number)
+    x_axis, y_axis = list_to_ccdf(mobile_per_connection_volume, 'mobile_downstream_vols')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    x_axis, y_axis = list_to_ccdf(desktop_per_connection_volume, 'desktop_downstream_vols')
+    ax.plot(x_axis, y_axis, '-g', label='desktop')
+    plt.ylabel('ccdf')
+    plt.xlabel('Downstream Volume per connection (Bytes)')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.grid()
+    plt.legend()
+#-----------------------------------------------------------------
 def read_from_sql(sql_statement, batches):
     conn = sqlite3.connect(opts.file)
     cursor = conn.cursor()
@@ -544,7 +573,7 @@ def read_from_sql(sql_statement, batches):
         batch.set_nr_of_web_bugs(entry[9])
 
         batches.append(batch)
-
+        conn.close()
 def process_batches():
     global processed_mobile_batches
     global processed_desktop_batches
@@ -677,6 +706,48 @@ def cdf_to_ccdf(p):
     for x in p:
         ccdf.append(1-x)
     return ccdf
+
+def extract_all_connections():
+    global mobile_per_connection_volume
+    global desktop_per_connection_volume
+    
+    sql = "select * from mobileConnections"
+    conn = sqlite3.connect(opts.file)
+    cursor = conn.cursor()
+    cursor.execute(sql)
+
+    for entry in cursor.fetchall():
+        mobile_per_connection_volume.append(entry[4])
+
+        sql = "select * from desktopConnections"
+    conn = sqlite3.connect(opts.file)
+    cursor = conn.cursor()
+    cursor.execute(sql)
+
+    for entry in cursor.fetchall():
+        desktop_per_connection_volume.append(entry[4])
+
+    conn.close()
+def perform_reverse_dns_lookup(target):
+    sql = "select * from %sConnections" % (target)
+    conn = sqlite3.connect(opts.file)
+    cursor = conn.cursor()
+    cursor.execute(sql)
+
+    for entry in cursor.fetchall():
+        sys.stdout.write('looking up host for ' + str(entry[1]) + ' ... :')
+        #print('looking up host for: %s :'), % (entry[1])
+        try:
+            reverse_dns = socket.gethostbyaddr(entry[1])
+        except socket.herror:
+             reverse_dns = None, None, None
+             print "socket error"
+        print('%s') % reverse_dns[0]
+        write_back_sql = "update %sConnections SET RDNS='%s' WHERE ID=%s" % (target, reverse_dns[0], str(entry[0]))
+        cursor.execute(write_back_sql)
+    conn.commit()
+    conn.close()
+
 if __name__=="__main__":
     main()
 
