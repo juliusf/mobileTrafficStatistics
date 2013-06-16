@@ -15,7 +15,7 @@ import Pmf
 import sqlite3
 import json
 import re
-import pudb
+import pdb
 
 
 #constants
@@ -222,43 +222,25 @@ def parse_pcap(filename):
                 if current_packet.haslayer(DNS):
                     dns = current_packet.getlayer(DNS)
                     if dns.qr:
-                     #   dns.show()
-                        #print "+" * 23
-                       # if dns.ancount > 0 and isinstance(dns.an, DNSRR):
-                            #print dns.an.getfieldval("rdata")
-                            #print dns.qd.getfieldval("qname")
-                        #dns.qr.getfieldval('rrname')
                         extract_DNS()
-                        #print "*" * 23
-                        dns.show()
-
-                        #f.show()
-                        current_dns_records.append(dns.an.getfieldval("rdata"))
-                        #print "-" * 23
-                        #dns.show()
+ 
 def extract_DNS():
+    global current_dns_records
     dns = current_packet.getlayer(DNS)
+    record = ""
     if dns.qr:
-        extract_DNS_helper(dns)
+        ancount = dns.ancount
+        nscount = dns.nscount
 
-def extract_DNS_helper(input):
-    for f in input:
-        #print f.field_name
-        #print f.field_value
-        #print "@" * 23
-        for g in f.fields_desc:
-            print g.name + ":"
-            fvalue = f.getfieldval(g.name)
-            if isinstance(fvalue, Packet) or (g.islist and g.holds_packets and type(fvalue) is list):
-                #print "%s  \\%-10s\\" % (label_lvl+lvl, ncol(f.name))
-                fvalue_gen = SetGen(fvalue,_iterpacket=0)
-                for fvalue in fvalue_gen:
-                    extract_DNS_helper(fvalue)
-            else:
-                print fvalue
+        for i in range(0,ancount):
+            record += dns.an[i].rrname + " "
+            record += dns.an[i].rdata + " "
 
-    if not input.payload.hashret() == "": #ugly hack
-        extract_DNS_helper(input.payload)
+        for i in range(0, nscount):
+            record += dns.ns[i].rrname + " "
+            record += dns.ns[i].rdata +  " "
+        current_dns_records.append(record)
+
 def process_TCP_Stream():
     global request_batch
     for connection in request_batch.get_connections():
