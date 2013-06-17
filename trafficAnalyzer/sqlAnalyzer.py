@@ -127,12 +127,17 @@ def main():
 
     plot_per_connection_downstream_ccdf(13, 111)
     plt.savefig(pp, format='pdf')
-    pp.close()
+    
+
 
     if opts.cdn == True:
        cdn_analysis()
-
-
+       plot_cdn_comparative(14,211)
+       plot_cdn_ccdf(14, 212)
+       plt.savefig(pp, format='pdf')
+       plot_cdn_comparatve_ccdf(15, 111)
+       plt.savefig(pp, format='pdf')
+    pp.close()
 
 def plot_downstream_ccdf(plotnumber, subplot_number):
     global processed_mobile_batches
@@ -149,7 +154,7 @@ def plot_downstream_ccdf(plotnumber, subplot_number):
     plt.ylabel('ccdf')
     plt.xlabel('Downstream Volume (Bytes)')
     plt.xscale('log')
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.grid()
     plt.legend()
 
@@ -168,7 +173,7 @@ def plot_get_count_ccdf(plotnumber, subplot_number):
     plt.ylabel('ccdf')
     plt.xlabel('Number of http GET requests')
     plt.xscale('log')
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.grid()
     plt.legend()
 
@@ -188,7 +193,7 @@ def plot_dns_count_ccdf(plotnumber, subplot_number):
     plt.ylabel('ccdf')
     plt.xlabel('Number of DNS requests')
     plt.xscale('log')
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.grid()
     plt.legend()
 
@@ -207,7 +212,7 @@ def plot_nr_of_connections_ccdf(plotnumber, subplot_number):
     plt.ylabel('ccdf')
     plt.xlabel('Number of Connections')
     plt.xscale('log')
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.grid()
     plt.legend()
 
@@ -226,7 +231,7 @@ def plot_nr_of_host_contacts_ccdf(plotnumber, subplot_number):
     plt.ylabel('ccdf')
     plt.xlabel('Number of hosts contacted')
     plt.xscale('log')
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.grid()
     plt.legend()
 
@@ -245,7 +250,7 @@ def plot_nr_of_webbugs_ccdf(plotnumber, subplot_number):
     plt.ylabel('ccdf')
     plt.xlabel('Number of Webbugs')
     plt.xscale('log')
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.grid()
     plt.legend()
 #----------------------------------------------------------------
@@ -764,6 +769,154 @@ def perform_reverse_dns_lookup(target):
     conn.commit()
     conn.close()
 
+def plot_cdn_comparative(plotnumber, subplot_number):
+    desktop = []
+    mobile = []
+    for batch in processed_desktop_batches:
+        cdn_volume = 0
+        normal_volume = 0
+        for conn in batch._active_connections:
+            if conn._is_CDN_connection:
+                cdn_volume += conn._current_volume
+            else:
+                normal_volume += conn._current_volume
+        if not (cdn_volume + normal_volume == 0):
+            desktop.append(float(cdn_volume)/(float(cdn_volume + normal_volume)))
+        else:
+            print "there's something wrong O.6"
+            desktop.append(0)
+    
+    for batch in processed_mobile_batches:
+        cdn_volume = 0
+        normal_volume = 0
+        for conn in batch._active_connections:
+            if conn._is_CDN_connection:
+                cdn_volume += conn._current_volume
+            else:
+                normal_volume += conn._current_volume
+
+        if not (cdn_volume + normal_volume == 0):
+            mobile.append(float(cdn_volume)/(float(cdn_volume + normal_volume)))
+        else:
+            print "there's something wrong O.6"
+            mobile.append(0)
+
+
+    plt.figure(plotnumber)
+    ax = plt.subplot(subplot_number)
+    #maximum = max(max(mobile), max(desktop) ) #super dirty hack!
+    #elper_x = np.arange(0,maximum, 10)
+    #helper_y = helper_x
+    #helper_y2 = helper_x / 10
+    #plt.ylim([0,maximum])
+    #plt.xlim([1,maximum])
+    #plt.ylim([1,maximum])
+    ax.plot(desktop, mobile, 'xr')
+    #ax.plot(helper_x, helper_y, '-g')
+    #ax.plot(helper_x, helper_y2, '-g')
+    plt.ylabel('CDN byte ratio (mobile)')
+    plt.xlabel('CDN byte ratio (desktop)')
+    #plt.xscale('log')
+    plt.grid()
+    #plt.xscale('log')
+    #plt.yscale('log')
+
+def plot_cdn_ccdf(plotnumber, subplot_number):
+    desktop = []
+    mobile = []
+    for batch in processed_desktop_batches:
+        cdn_volume = 0
+        normal_volume = 0
+        for conn in batch._active_connections:
+            if conn._is_CDN_connection:
+                cdn_volume += conn._current_volume
+            else:
+                normal_volume += conn._current_volume
+        if not (cdn_volume + normal_volume == 0):
+            desktop.append(float(cdn_volume)/(float(cdn_volume + normal_volume)))
+        else:
+            print "there's something wrong O.6"
+            desktop.append(0)
+    
+    for batch in processed_mobile_batches:
+        cdn_volume = 0
+        normal_volume = 0
+        for conn in batch._active_connections:
+            if conn._is_CDN_connection:
+                cdn_volume += conn._current_volume
+            else:
+                normal_volume += conn._current_volume
+
+        if not (cdn_volume + normal_volume == 0):
+            mobile.append(float(cdn_volume)/(float(cdn_volume + normal_volume)))
+        else:
+            print "there's something wrong O.6"
+            mobile.append(0)
+
+    plt.figure(plotnumber)
+    ax = plt.subplot(subplot_number)
+    x_axis, y_axis = list_to_ccdf(mobile, 'mobile_connections')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    x_axis, y_axis = list_to_ccdf(desktop, 'mobile_connections')
+    ax.plot(x_axis, y_axis, '-g', label='desktop')
+    plt.ylabel('ccdf')
+    plt.xlabel('CDN byte ratio')
+    #plt.xscale('log')
+    #plt.yscale('log')
+    plt.grid()
+    plt.legend()
+
+def plot_cdn_comparatve_ccdf(plotnumber, subplot_number):
+
+    desktop = []
+    mobile = []
+    ratio = []
+    for batch in processed_desktop_batches:
+        cdn_volume = 0
+        normal_volume = 0
+        for conn in batch._active_connections:
+            if conn._is_CDN_connection:
+                cdn_volume += conn._current_volume
+            else:
+                normal_volume += conn._current_volume
+        if not (cdn_volume + normal_volume == 0):
+            desktop.append(float(cdn_volume)/(float(cdn_volume + normal_volume)))
+        else:
+            print "there's something wrong O.6"
+            desktop.append(0)
+    
+    for batch in processed_mobile_batches:
+        
+        cdn_volume = 0
+        normal_volume = 0
+        for conn in batch._active_connections:
+            if conn._is_CDN_connection:
+                cdn_volume += conn._current_volume
+            else:
+                normal_volume += conn._current_volume
+
+        if not (cdn_volume + normal_volume == 0):
+            mobile.append(float(cdn_volume)/(float(cdn_volume + normal_volume)))
+        else:
+            print "there's something wrong O.6"
+            mobile.append(0)
+
+    for desktop_x, mobile_y in zip(desktop, mobile):
+        if float(desktop_x) == 0.0:
+            ratio.append(1e400)
+        else:
+            ratio.append(float(mobile_y)/float(desktop_x))
+
+    plt.figure(plotnumber)
+    ax = plt.subplot(subplot_number)
+    x_axis, y_axis = list_to_ccdf(ratio, 'mobile_connections')
+    ax.plot(x_axis, y_axis, '-r', label='mobile')
+    plt.ylabel('ccdf')
+    plt.xlabel('mobile CDN byte ratio / desktop CDN byte ratio')
+    #plt.xscale('log')
+    #plt.yscale('log')
+    plt.grid()
+
 def cdn_analysis():
     desktop_downstream_cdn = 0
     desktop_downstream_normal = 0
@@ -773,6 +926,8 @@ def cdn_analysis():
 
     global mobile_connections
     global desktop_connections
+    global processed_mobile_batches
+    global processed_desktop_batches
 
     cdn_analysis_helper(desktop_connections, "desktop")
     cdn_analysis_helper(mobile_connections, "mobile")
@@ -794,6 +949,12 @@ def cdn_analysis():
     print ("desktop_downstream_normal: %d") % (desktop_downstream_normal)
     print ("desktop_downstream_cdn: %d") % (desktop_downstream_cdn)
 
+    for conn in mobile_connections:
+        processed_mobile_batches[conn._parentBatchID - 1]._active_connections.append(conn)
+
+    for conn in desktop_connections:
+        processed_desktop_batches[conn._parentBatchID - 1]._active_connections.append(conn)
+
 def cdn_analysis_helper(container, type):
     sql = "select * from %sConnections" % (type)
     conn = sqlite3.connect(opts.file)
@@ -813,6 +974,7 @@ def cdn_analysis_helper(container, type):
                 conn._is_CDN_connection = True
                 break
         container.append(conn)
+
 if __name__=="__main__":
     main()
 
