@@ -1,0 +1,18 @@
+{ "cdns": [
+{ "provider":"akamai","pattern":"akamai"},
+{"provider":"akamai","pattern":"akadns\\.net"},
+{"provider":"akamai","pattern":"akam\\.net"},
+{"provider":"limelight","pattern":"llnwd\\.net"},
+{"provider":"limelight","pattern":"llns\\.net"},
+{"provider":"cloudfront","pattern":"\\.cloudfront\\.net"},
+{"provider":"bitgravity","pattern":"\\.bitgravity\\.com"},
+{"provider":"cachefly","pattern":"\\.cachefly\\.net"},
+{"provider":"cdn77","pattern":"\\.cdn77\\.net"},
+{"provider":"chinacache","pattern":"\\.chinacache\\."},
+{"provider":"cotendo","pattern":"cotendo\\."},
+{"provider":"cotendo","pattern":"\\.cotcdn\\."},
+{"provider":"fastly","pattern":"\\.fastly\\.net"},
+{"provider":"internap","pattern":"\\.internapcdn\\.net"},
+{"provider":"taobao","pattern":"\\.taobaocdn\\."},
+{"provider":"netdna","pattern":"\\.netdna-cdn.com"},
+{"provider":"cdnetworks","pattern":"panthercdn\\.com"}]}
