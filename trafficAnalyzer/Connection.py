@@ -14,6 +14,7 @@ class Connection(object):
         self._rDNS = ""
         self._parentBatchID = 0
         self._is_CDN_connection = False
+        
 
     def get_volume(self):
         return self._current_volume

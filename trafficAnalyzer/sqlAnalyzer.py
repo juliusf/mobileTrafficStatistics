@@ -975,6 +975,7 @@ def cdn_analysis_helper(container, type):
                 break
         container.append(conn)
 
+    conn.close()
 if __name__=="__main__":
     main()
 
