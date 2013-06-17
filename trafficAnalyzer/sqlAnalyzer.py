@@ -1,6 +1,7 @@
 #!/usr/bin/python2.7
 
 from RequestBatch import RequestBatch
+from Connection import Connection
 import optparse
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -11,6 +12,8 @@ import Cdf
 import pdb
 import socket
 import sys
+import json
+import re
 
 #constants
 opts = None
@@ -39,6 +42,11 @@ desktop_nr_of_webbugs = []
 mobile_per_connection_volume = []
 desktop_per_connection_volume = []
 
+mobile_connections = []
+desktop_connections = []
+
+cdn_regex = []
+
 def main():
     global opts
     global args
@@ -47,12 +55,19 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('-f', '--file', help='specifies the sqlite database which contains the experiment resulsts')
     parser.add_option('-d', '--dns', action="store_true", default=False, help='performs a DNS reverse lookup for every connection')
+    parser.add_option('-c', '--cdn', action="store_true", default=False, help='performs the cdn analysis')
     (opts, args) = parser.parse_args()
     
     if opts.file is None:
         print "You haven't specified any sqlite file.\n"
         parser.print_help()
         exit(-1)
+
+    #Loading of CDN classification data
+    json_data=open('cdn_regex.json').read()
+    data = json.loads(json_data)
+    for entry in data["cdns"]:
+        cdn_regex.append(re.compile(entry["pattern"], re.I))
 
     #Loading of Sql
     sql = "select * from desktopMeasurement"
@@ -114,7 +129,8 @@ def main():
     plt.savefig(pp, format='pdf')
     pp.close()
 
-
+    if opts.cdn == True:
+       cdn_analysis()
 
 
 
@@ -719,7 +735,7 @@ def extract_all_connections():
     for entry in cursor.fetchall():
         mobile_per_connection_volume.append(entry[4])
 
-        sql = "select * from desktopConnections"
+    sql = "select * from desktopConnections"
     conn = sqlite3.connect(opts.file)
     cursor = conn.cursor()
     cursor.execute(sql)
@@ -748,6 +764,55 @@ def perform_reverse_dns_lookup(target):
     conn.commit()
     conn.close()
 
+def cdn_analysis():
+    desktop_downstream_cdn = 0
+    desktop_downstream_normal = 0
+
+    mobile_downstream_cdn = 0
+    mobile_downstream_normal = 0
+
+    global mobile_connections
+    global desktop_connections
+
+    cdn_analysis_helper(desktop_connections, "desktop")
+    cdn_analysis_helper(mobile_connections, "mobile")
+
+    for connection in desktop_connections:
+        if connection._is_CDN_connection:
+            desktop_downstream_cdn += connection._current_volume
+        else:
+            desktop_downstream_normal += connection._current_volume
+
+    for connection in mobile_connections:
+        if connection._is_CDN_connection:
+            mobile_downstream_cdn += connection._current_volume
+        else:
+            mobile_downstream_normal += connection._current_volume
+
+    print ("mobile_downstream_normal: %d") % (mobile_downstream_normal)
+    print ("mobile_downstream_cdn: %d") % (mobile_downstream_cdn)
+    print ("desktop_downstream_normal: %d") % (desktop_downstream_normal)
+    print ("desktop_downstream_cdn: %d") % (desktop_downstream_cdn)
+
+def cdn_analysis_helper(container, type):
+    sql = "select * from %sConnections" % (type)
+    conn = sqlite3.connect(opts.file)
+    cursor = conn.cursor()
+    cursor.execute(sql)
+
+    for entry in cursor.fetchall():
+        conn = Connection()
+        conn._dst_IP = entry[1]
+        conn._DNS = entry[2]
+        conn._rDNS = entry[3]
+        conn._current_volume = entry[4]
+        conn._parentBatchID = entry[6]
+        
+        for pattern in cdn_regex:
+            if pattern.search(entry[2]) or pattern.search(entry[3]):
+                conn._is_CDN_connection = True
+                break
+        container.append(conn)
 if __name__=="__main__":
     main()
 
