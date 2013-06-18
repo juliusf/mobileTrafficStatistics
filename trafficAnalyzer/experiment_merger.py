@@ -13,28 +13,15 @@ experiments = []
 cdn_regex = []
 current_experiment = None
 processed_batches = []
+mobile_connections = []
+desktop_connections = []
 
 def main(argv):
-    result_mobile_http_gets = []
-    result_mobile_dns_reqs = []
-    result_mobile_downstream_vols = []
-    result_mobile_xaxis = []
-    result_mobile_nr_of_host_contacts = []
-    result_mobile_upstream_vols = []
-    result_mobile_nr_of_connections = []
-    result_mobile_nr_of_webbugs = []
-
-    result_desktop_http_gets = []
-    result_desktop_dns_reqs = []
-    result_desktop_downstream_vols = []
-    result_desktop_xaxis = []
-    result_desktop_nr_of_host_contacts = []
-    result_desktop_upstream_vols = []
-    result_desktop_nr_of_connections = []
-    result_desktop_nr_of_webbugs = []
     global experiments
     global current_experiment
     global processed_batches
+    global mobile_connections
+    global desktop_connections
 
     json_data=open('cdn_regex.json').read()
     data = json.loads(json_data)
@@ -52,7 +39,7 @@ def main(argv):
             read_batch_from_sql(file, sql, exp._processed_mobile_batches)
 
             sql = "select * from desktopConnections"
-            read_connection_from_sql(file,sql, exp._mobile_connections)
+            read_connection_from_sql(file,sql, exp._desktop_connections)
             sql = "select * from mobileConnections"
             read_connection_from_sql(file,sql, exp._mobile_connections)
             experiments.append(exp)
@@ -78,8 +65,53 @@ def main(argv):
         batch._connectionCount = (x._connectionCount + y._connectionCount + z._connectionCount ) / 3.0
         batch._nr_of_webbgus = (x._nr_of_webbgus + y._nr_of_webbgus + z._nr_of_webbgus ) / 3.0
         batch._requestURL = x._requestURL
+
+        x_cdn_volume = 0
+        x_normal_volume = 0
+        for connection in x._active_connections:
+            if connection._is_CDN_connection:
+                x_cdn_volume += connection._current_volume
+            else:
+                x_normal_volume += connection._current_volume
+        
+        y_cdn_volume = 0
+        y_normal_volume = 0
+        for connection in y._active_connections:
+            if connection._is_CDN_connection:
+                y_cdn_volume += connection._current_volume
+            else:
+                y_normal_volume += connection._current_volume
+
+        z_cdn_volume = 0
+        z_normal_volume = 0
+        for connection in z._active_connections:
+            if connection._is_CDN_connection:
+                z_cdn_volume += connection._current_volume
+            else:
+                z_normal_volume += connection._current_volume
+
+
+        cdn_avg = float(z_cdn_volume + y_cdn_volume + x_cdn_volume) / 3.0
+        normal_avg = float(x_normal_volume + y_normal_volume + z_normal_volume) / 3.0
+
+        avg_normal_conn = Connection()
+        avg_cdn_conn = Connection()
+
+        avg_normal_conn._is_CDN_connection = False
+        avg_normal_conn._current_volume = normal_avg
+        avg_normal_conn._DNS = "dirtyhack"
+
+        avg_cdn_conn._is_CDN_connection = True
+        avg_cdn_conn._current_volume = cdn_avg
+        avg_cdn_conn._DNS = "akamai" #dirty hack aswell
+
+
+        batch._active_connections.append(avg_cdn_conn)
+        batch._active_connections.append(avg_normal_conn)
+
         processed_batches.append(batch)
-    print len(processed_batches)
+
+    
     for x,y,z in zip(exp1._processed_desktop_batches, exp2._processed_desktop_batches, exp3._processed_desktop_batches):
         batch = RequestBatch()
         batch._getCount = (x._getCount + y._getCount + z._getCount ) / 3.0
@@ -90,8 +122,52 @@ def main(argv):
         batch._connectionCount = (x._connectionCount + y._connectionCount + z._connectionCount ) / 3.0
         batch._nr_of_webbgus = (x._nr_of_webbgus + y._nr_of_webbgus + z._nr_of_webbgus ) / 3.0
         batch._requestURL = x._requestURL
+
+        x_cdn_volume = 0
+        x_normal_volume = 0
+        for connection in x._active_connections:
+            if connection._is_CDN_connection:
+                x_cdn_volume += connection._current_volume
+            else:
+                x_normal_volume += connection._current_volume
+        
+        y_cdn_volume = 0
+        y_normal_volume = 0
+        for connection in y._active_connections:
+            if connection._is_CDN_connection:
+                y_cdn_volume += connection._current_volume
+            else:
+                y_normal_volume += connection._current_volume
+
+        z_cdn_volume = 0
+        z_normal_volume = 0
+        for connection in z._active_connections:
+            if connection._is_CDN_connection:
+                z_cdn_volume += connection._current_volume
+            else:
+                z_normal_volume += connection._current_volume
+
+        cdn_avg = float(z_cdn_volume + y_cdn_volume + x_cdn_volume) / 3.0
+        normal_avg = float(x_normal_volume + y_normal_volume + z_normal_volume) / 3.0
+
+        avg_normal_conn = Connection()
+        avg_cdn_conn = Connection()
+
+        avg_normal_conn._is_CDN_connection = False
+        avg_normal_conn._current_volume = normal_avg
+        avg_normal_conn._DNS = "dirtyhack"
+
+        avg_cdn_conn._is_CDN_connection = True
+        avg_cdn_conn._current_volume = cdn_avg
+        avg_cdn_conn._DNS = "akamai" #dirty hack aswell
+
+
+        batch._active_connections.append(avg_cdn_conn)
+        batch._active_connections.append(avg_normal_conn)
         processed_batches.append(batch)
     print len(processed_batches)
+
+
 
    # for x,y,z in zip(exp1._processed_mobile_batches, exp2._processed_mobile_batches, exp3._processed_mobile_batches)
      #   result_mobile_http_gets.append((x+y+z)/3.0)
@@ -173,13 +249,13 @@ def add_to_database(original_filename):
     for batch in processed_batches:
         if '| MOBILE |' in batch.get_requesturl():
             mobile_data.append( ("gold", batch._requestURL, batch.get_getrequests(), batch.get_dnsrequests(),  batch.get_downstreamvolume(), 0,  batch.get_nr_of_host_contacts(), batch.get_connection_count(), batch.get_nr_of_web_bugs() ) )
-           # for connection in batch.get_connections():
-            #    mobile_connection.append( (connection.get_dst_ip(), connection.get_dns(), connection.get_volume(), batch.get_requesturl(), mobile_id_counter))
+            for connection in batch.get_connections():
+                mobile_connection.append( (connection.get_dst_ip(), connection.get_dns(), connection.get_volume(), batch.get_requesturl(), mobile_id_counter))
             mobile_id_counter += 1
         if '| DESKTOP |' in batch.get_requesturl():
             desktop_data.append( ("gold", batch._requestURL, batch.get_getrequests(), batch.get_dnsrequests(), batch.get_downstreamvolume(), 0, batch.get_nr_of_host_contacts(), batch.get_connection_count(), batch.get_nr_of_web_bugs() ) )
-          #  for connection in batch.get_connections():
-          #      desktop_connection.append( (connection.get_dst_ip(), connection.get_dns(), connection.get_volume(), batch.get_requesturl(), desktop_id_counter))
+            for connection in batch.get_connections():
+                desktop_connection.append( (connection.get_dst_ip(), connection.get_dns(), connection.get_volume(), batch.get_requesturl(), desktop_id_counter))
             desktop_id_counter += 1
     if mobile_data:
         c.executemany('insert into mobileMeasurement values (null,?,?,?,?,?,?,?,?,?)', mobile_data)

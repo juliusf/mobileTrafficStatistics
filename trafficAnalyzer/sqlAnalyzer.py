@@ -265,16 +265,17 @@ def plot_downstream_comparative(plotnumber, subplot_number):
     
     plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
-    maximum = max(max(downstream_requests_y), max(downstream_requests_x) ) #super dirty hack!
-    helper_x = np.arange(0,maximum, 10)
-    helper_y = helper_x
-    helper_y2 = helper_x / 10
+    print downstream_requests_x
+    #maximum = max(int(round(float(downstream_requests_y))), int(round(float(downstream_requests_x))) ) #super dirty hack!
+    #helper_x = np.arange(0,maximum, 10)
+    #helper_y = helper_x
+    #helper_y2 = helper_x / 10
     #plt.ylim([0,maximum])
-    plt.xlim([1,maximum])
-    plt.ylim([1,maximum])
+    #plt.xlim([1,maximum])
+    #plt.ylim([1,maximum])
     ax.plot(downstream_requests_x, downstream_requests_y, 'xr')
-    ax.plot(helper_x, helper_y, '-g')
-    ax.plot(helper_x, helper_y2, '-g')
+    #ax.plot(helper_x, helper_y, '-g')
+    #ax.plot(helper_x, helper_y2, '-g')
     plt.ylabel('Downstream volume per request on mobile')
     plt.xlabel('Downstream volume per desktop')
     #plt.xscale('log')
@@ -293,14 +294,14 @@ def plot_get_request_comparative(plotnumber, subplot_number):
     
     plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
-    maximum = max(max(get_requests_y) + 50, max(get_requests_x) + 50) #super dirty hack!
+    #maximum = max(int(round(get_requests_y)) + 50, int(round(get_requests_x)) + 50) #super dirty hack!
     #plt.ylim([0,maximum])
-    plt.xlim([1,maximum])
-    plt.ylim([1,maximum])
-    helper_x = range(maximum)
-    helper_y = helper_x
+    #plt.xlim([1,maximum])
+    #plt.ylim([1,maximum])
+    #helper_x = range(maximum)
+    #helper_y = helper_x
     ax.plot(get_requests_x, get_requests_y, 'xr')
-    ax.plot(helper_x, helper_y, '-g')
+    #ax.plot(helper_x, helper_y, '-g')
     plt.ylabel('# GET requests on mobile')
     plt.xlabel('# GET requests on desktop')
     #plt.xscale('log')
@@ -319,14 +320,14 @@ def plot_dns_request_comparative(plotnumber, subplot_number):
 
     plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
-    maximum = max(max(dns_requests_y) + 50, max(dns_requests_x) + 50) #super dirty hack!
-    helper_x = range(maximum)
-    helper_y = helper_x
+    #maximum = max(int(round(dns_requests_y)) + 50, int(round(dns_requests_x)) + 50) #super dirty hack!
+    #helper_x = range(maximum)
+    #helper_y = helper_x
     #plt.ylim([0,maximum])
-    plt.xlim([1,maximum])
-    plt.ylim([1,maximum])
+    #plt.xlim([1,maximum])
+    #plt.ylim([1,maximum])
     ax.plot(dns_requests_x, dns_requests_y, 'xr')
-    ax.plot(helper_x, helper_y, '-g')
+    #ax.plot(helper_x, helper_y, '-g')
     plt.ylabel('# DNS requests on mobile')
     plt.xlabel('# DNS requests on desktop')
     #plt.xscale('log')
@@ -346,16 +347,16 @@ def plot_nr_of_connections_comparative(plotnumber, subplot_number):
 
     plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
-    maximum = max(max(connections_x), max(connections_y) ) #super dirty hack!
-    helper_x = np.linspace(0,maximum, 1000000)
-    helper_y = helper_x
-    helper_y2 = helper_x / 10
+    #maximum = max(int(round(connections_x)), int(round(connections_y)) ) #super dirty hack!
+    #helper_x = np.linspace(0,maximum, 1000000)
+    #helper_y = helper_x
+    #helper_y2 = helper_x / 10
     #plt.ylim([0,maximum])
-    plt.xlim([1,maximum])
-    plt.ylim([1,maximum])
+    #plt.xlim([1,maximum])
+    #plt.ylim([1,maximum])
     ax.plot(connections_x, connections_y, 'xr')
-    ax.plot(helper_x, helper_y, '-g')
-    ax.plot(helper_x, helper_y2, '-g')
+    #ax.plot(helper_x, helper_y, '-g')
+    #ax.plot(helper_x, helper_y2, '-g')
     plt.ylabel('# of connections per request on mobile')
     plt.xlabel('# of connections per request on desktop')
     plt.xscale('log')
@@ -373,16 +374,16 @@ def plot_nr_of_host_contacts_comparative(plotnumber, subplot_number):
 
     plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
-    maximum = max(max(host_contacts_x), max(host_contacts_y) ) #super dirty hack!
-    helper_x = np.linspace(0,maximum, 1000000)
-    helper_y = helper_x
-    helper_y2 = helper_x / 10
+    #maximum = max(int(round(host_contacts_x)), int(round(host_contacts_y)) ) #super dirty hack!
+    #helper_x = np.linspace(0,maximum, 1000000)
+    #helper_y = helper_x
+    #helper_y2 = helper_x / 10
     #plt.ylim([0,maximum])
-    plt.xlim([1,maximum])
-    plt.ylim([1,maximum])
+    #plt.xlim([1,maximum])
+    #plt.ylim([1,maximum])
     ax.plot(host_contacts_x, host_contacts_y, 'xr')
-    ax.plot(helper_x, helper_y, '-g')
-    ax.plot(helper_x, helper_y2, '-g')
+    #ax.plot(helper_x, helper_y, '-g')
+    #ax.plot(helper_x, helper_y2, '-g')
     plt.ylabel('Unique hosts contacted per request on mobile')
     plt.xlabel('Unique hosts contacted per request on desktop')
     plt.xscale('log')
@@ -400,15 +401,15 @@ def plot_nr_of_webbugs_comparative(plotnumber, subplot_number):
 
     plt.figure(plotnumber)
     ax = plt.subplot(subplot_number)
-    maximum = max(max(webbugs_x), max(webbugs_y) ) #super dirty hack!
-    helper_x = np.linspace(0,maximum, 1000000)
-    helper_y = helper_x
+    #maximum = max(int(round(max(webbugs_x))), max(int(round(webbugs_y))) ) #super dirty hack!
+    #helper_x = np.linspace(0,maximum, 1000000)
+    #helper_y = helper_x
     #helper_y2 = helper_x / 10
     #plt.ylim([0,maximum])
     #plt.xlim([1,maximum])
     #plt.ylim([1,maximum])
     ax.plot(webbugs_x, webbugs_y, 'xr')
-    ax.plot(helper_x, helper_y, '-g')
+    #ax.plot(helper_x, helper_y, '-g')
     #ax.plot(helper_x, helper_y2, '-g')
     plt.ylabel('# of Webbugs detected per request on mobile')
     plt.xlabel('# of Webbugs detected per request on desktop')
@@ -594,7 +595,7 @@ def read_from_sql(sql_statement, batches):
         batch.set_nr_of_web_bugs(entry[9])
 
         batches.append(batch)
-        conn.close()
+    conn.close()
 def process_batches():
     global processed_mobile_batches
     global processed_desktop_batches
@@ -957,8 +958,8 @@ def cdn_analysis():
 
 def cdn_analysis_helper(container, type):
     sql = "select * from %sConnections" % (type)
-    conn = sqlite3.connect(opts.file)
-    cursor = conn.cursor()
+    sql_conn = sqlite3.connect(opts.file)
+    cursor = sql_conn.cursor()
     cursor.execute(sql)
 
     for entry in cursor.fetchall():
@@ -975,7 +976,7 @@ def cdn_analysis_helper(container, type):
                 break
         container.append(conn)
 
-    conn.close()
+    sql_conn.close()
 if __name__=="__main__":
     main()
 
