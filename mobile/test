@@ -1,7 +1,0 @@
-#!/bin/bash
-
-while true; do
-
-echo "ass"
-sleep 1s
-done;
