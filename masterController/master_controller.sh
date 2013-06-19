@@ -82,20 +82,8 @@ copyResult $filename
 }
 
 
- if [ $1 == "--selftest" ]; then
- filename=13-04-03--05_basic_measurement
 
-getRemoteFileSize "$filename"
- echo $filesize
- fi
-if [ $1 == "--basicTest" ]; then
 for i in {1..1}
 do
    basic_measurement_cycle
 done
-else
-echo "Usage: --basicTest for basic test"
-echo "--selfTest for selftest"
-fi
-
-
